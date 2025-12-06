@@ -62,7 +62,28 @@ export default function Navbar() {
               Lessons
             </Link>
 
-            {user && <></>}
+            {user && (
+              <>
+                <Link
+                  to="/dashboard/add-lesson"
+                  className={isActive("/dashboard/add-lesson")}
+                >
+                  Add Lesson
+                </Link>
+                <Link
+                  to="/dashboard/my-lessons"
+                  className={isActive("/dashboard/my-lessons")}
+                >
+                  My Lesson
+                </Link>
+                <Link
+                  to="/pricing/upgrade"
+                  className={isActive("/pricing/upgrade")}
+                >
+                  Pricing
+                </Link>
+              </>
+            )}
 
             <Link to="/about" className={isActive("/about")}>
               About
@@ -168,13 +189,6 @@ export default function Navbar() {
               className={mobileLinkStyle("/")}
             >
               Home
-            </Link>
-            <Link
-              to="/products"
-              onClick={() => setMobileMenu(false)}
-              className={mobileLinkStyle("/products")}
-            >
-              Products
             </Link>
             <Link
               to="/about"
