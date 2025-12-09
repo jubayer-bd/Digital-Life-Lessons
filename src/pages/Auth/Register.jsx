@@ -1,205 +1,244 @@
-import React, { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import React, { useState } from "react";
+import { useForm } from "react-hook-form";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-import { FcGoogle } from "react-icons/fc";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  updateProfile,
-} from "firebase/auth";
-import { app } from "../../Firebase/firebase.config";
-import { AuthContext } from "../../context/AuthContext";
-
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
+import { Link, useLocation, useNavigate } from "react-router";
+import axios from "axios";
+import useAuth from "../../hooks/useAuth";
+import useAxios from "../../hooks/useAxios";
 
 const Register = () => {
-  const { createUser, setLoading, setUser } = useContext(AuthContext);
+  const { registerUser, updateUserProfile, googleSignIn } = useAuth();
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const axiosSecure = useAxios();
 
-  const [name, setName] = useState("");
-  const [photo, setPhoto] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setBtnLoading] = useState(false);
-  const [pageLoading, setPageLoading] = useState(true);
-  useEffect(() => {
-    document.title = "Register | UtilityBill";
-  });
-  //  Password Validation
-  const validatePassword = (pass) => {
-    if (pass.length < 6) return "Password must be at least 6 characters";
-    if (!/[A-Z]/.test(pass)) return "Must include an uppercase letter";
-    if (!/[a-z]/.test(pass)) return "Must include a lowercase letter";
-    return "";
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
-  //  Handle Register
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    const errorMsg = validatePassword(password);
-    if (errorMsg) {
-      setPasswordError(errorMsg);
-      return;
-    }
-
-    setPasswordError("");
-    setBtnLoading(true);
+  const handleRegistration = async (data) => {
     setLoading(true);
 
     try {
-      const res = await createUser(email, password);
+      // --------------------------
+      // 1. CREATE ACCOUNT
+      // --------------------------
+      const userCredential = await registerUser(data.email, data.password);
+      const user = userCredential.user;
 
-      await updateProfile(res.user, {
-        displayName: name,
-        photoURL: photo || "",
+      // --------------------------
+      // 2. UPLOAD IMAGE TO IMGBB
+      // --------------------------
+      const profileImg = data.photo[0];
+      const formData = new FormData();
+      formData.append("image", profileImg);
+
+      const imgApiUrl = `https://api.imgbb.com/1/upload?key=${
+        import.meta.env.VITE_image_host
+      }`;
+
+      const imgResponse = await axios.post(imgApiUrl, formData);
+
+      const photoURL = imgResponse.data.data.url;
+      const userInfo = {
+        email: data.email,
+        displayName: data.name,
+        photoURL: photoURL,
+      };
+      axiosSecure.post("/users", userInfo).then((res) => {
+        if (res.data.insertedId) {
+          console.log("User info saved:", res.data);
+        }
       });
 
-      setUser({
-        ...res.user,
-        displayName: name,
-        photoURL: photo || "",
-      });
+      // --------------------------
+      // 3. UPDATE FIREBASE PROFILE
+      // --------------------------
 
-      toast.success("🎉 Registration successful!");
-      navigate("/", { replace: true });
+      const userProfile = {
+        displayName: data.name,
+        photoURL: photoURL,
+      };
+      // console.log(userProfile);
+      await updateUserProfile(userProfile);
+
+      // --------------------------
+      // 4. SUCCESS
+      // --------------------------
+      toast.success("Account Created Successfully!");
+      navigate(location?.state || "/");
     } catch (error) {
-      toast.error(error.message || "Registration failed!");
+      console.log(error);
+      toast.error("Registration Failed. Try Again.");
     } finally {
-      setBtnLoading(false);
       setLoading(false);
     }
   };
-
-  // 🔹 Google Sign-In
+  // ----------social login handler ----------
   const handleGoogleSignIn = async () => {
-    try {
-      const res = await signInWithPopup(auth, googleProvider);
-      setUser(res.user);
-      toast.success("🎉 Logged in with Google!");
-      navigate("/", { replace: true });
-    } catch (error) {
-      toast.error(error.message || "Google login failed!");
-    }
+    setLoading(true);
+    googleSignIn()
+      .then((result) => {
+        toast.success("SignUp Successfully");
+        const userInfo = {
+          email: result.user.email,
+          displayName: result.user.displayName,
+          photoURL: result.user.photoURL,
+        };
+
+        axiosSecure.post("/users", userInfo).then((res) => {
+          if (res.data.insertedId) {
+            console.log("User info saved:", res.data);
+          }
+        });
+        navigate(location?.state || "/");
+      })
+      .catch(() => toast.error("SignUp Failed"))
+      .finally(() => setLoading(false));
   };
-  useEffect(() => {
-    const timer = setTimeout(() => setPageLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
-  if (pageLoading) return <div>Loading...</div>;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-10 my-10 ">
-      <div className="w-full max-w-md bg-base-100 shadow-xl rounded-2xl p-8">
-        <h2 className="text-3xl font-bold text-center mb-6">Sign Up</h2>
-
-        <form onSubmit={handleRegister} className="space-y-4">
-          {/* Name */}
-          <div>
-            <label className="label">
-              <span className=" label-text font-medium">Name</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Enter your full name"
-              className="input input-bordered w-full"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* Photo URL */}
-          <div>
-            <label className="label">
-              <span className="label-text font-medium">Photo URL</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Enter your photo URL"
-              className="input input-bordered w-full"
-              value={photo}
-              onChange={(e) => setPhoto(e.target.value)}
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="label">
-              <span className="label-text font-medium">Email</span>
-            </label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="input input-bordered w-full"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          {/* Password */}
-          <div>
-            <label className="label">
-              <span className="label-text font-medium">Password</span>
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
-                className="input input-bordered w-full pr-10"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <span
-                type="button"
-                className="absolute right-3 top-3 text-xl text-gray-500 z-10 cursor-pointer"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
-              </span>
-            </div>
-            {passwordError && (
-              <p className="text-red-500 text-sm mt-1">{passwordError}</p>
-            )}
-          </div>
-
-          {/* Register Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary w-full"
-          >
-            {loading ? "Registering..." : "Register"}
-          </button>
-        </form>
-
-        <div className="divider">or</div>
-
-        {/* Google Sign In */}
-        <button
-          onClick={handleGoogleSignIn}
-          className="btn btn-outline w-full flex items-center justify-center gap-2"
-        >
-          <FcGoogle className="text-2xl" /> Continue with Google
-        </button>
-
-        {/* Login Link */}
-        <p className="text-center text-sm mt-4">
-          Already have an account?{" "}
-          <button
-            className="text-primary hover:underline"
-            onClick={() => navigate("/login")}
-          >
-            Login here
-          </button>
-        </p>
+    <div className="bg-white py-10 px-5 rounded-xl">
+      <div className="pb-5">
+        {/* <Logo /> */}
       </div>
-    </div>
+
+      
+        {/* LEFT FORM */}
+        <motion.div
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="flex items-center justify-center px-10"
+        >
+          <div className="w-full max-w-md">
+            <h2 className="text-4xl font-extrabold mb-2 text-gray-800">
+              Create Account
+            </h2>
+            <p className="text-gray-500 mb-6">Register with ZapShift</p>
+
+            <form
+              onSubmit={handleSubmit(handleRegistration)}
+              className="space-y-3"
+            >
+              {/* Name */}
+              <div>
+                <label className="font-semibold text-sm">Name</label>
+                <input
+                  type="text"
+                  {...register("name", { required: true })}
+                  placeholder="Your Name"
+                  className="input input-bordered w-full"
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-xs">Name is required</p>
+                )}
+              </div>
+
+              {/* Photo */}
+              <div>
+                <label className="font-semibold text-sm">Photo</label>
+                <input
+                  type="file"
+                  {...register("photo", { required: true })}
+                  className="file-input input-bordered w-full"
+                />
+                {errors.photo && (
+                  <p className="text-red-500 text-xs">Photo is required</p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="font-semibold text-sm">Email</label>
+                <input
+                  type="email"
+                  {...register("email", { required: true })}
+                  placeholder="Email"
+                  className="input input-bordered w-full"
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs">Email is required</p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="font-semibold text-sm">Password</label>
+                <div className="relative">
+                  <input
+                    type={showPass ? "text" : "password"}
+                    {...register("password", { required: true, minLength: 6 })}
+                    placeholder="Password"
+                    className="input input-bordered w-full"
+                  />
+                  <span
+                    className="absolute right-3 top-3 cursor-pointer text-sm text-gray-600"
+                    onClick={() => setShowPass(!showPass)}
+                  >
+                    {showPass ? "Hide" : "Show"}
+                  </span>
+                </div>
+
+                {errors.password?.type === "required" && (
+                  <p className="text-red-500 text-xs">Password is required</p>
+                )}
+                {errors.password?.type === "minLength" && (
+                  <p className="text-red-500 text-xs">
+                    Password must be at least 6 characters
+                  </p>
+                )}
+              </div>
+
+              {/* Register Button */}
+              <button
+                disabled={loading}
+                className="btn btn-primary w-full mt-2"
+              >
+                {loading ? "Creating Account..." : "Register"}
+              </button>
+
+              <p className="text-center text-gray-600 text-sm">
+                Already have an account?{" "}
+                <Link
+                  state={location.state}
+                  to={"/auth/login"}
+                  className="font-semibold text-primary"
+                >
+                  Login
+                </Link>
+              </p>
+
+              <div className="divider">OR</div>
+
+              {/* Google */}
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                className="btn w-full border"
+              >
+                <img
+                  src="https://www.svgrepo.com/show/475656/google-color.svg"
+                  className="w-5 h-5"
+                />
+                {loading ? (
+                  <span className="loading loading-dots loading-md"></span>
+                ) : (
+                  " Register with Google"
+                )}
+              </button>
+            </form>
+          </div>
+        </motion.div>
+
+      
+      </div>
+    
   );
 };
 
