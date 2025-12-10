@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import { AuthContext } from "../context/AuthContext";
+import useRole from "../hooks/useIsPremimum";
+import useIsPremium from "../hooks/usePremium";
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
-
+  const { isPremium } = useIsPremium();
+  console.log(isPremium);
   const pathname = location.pathname;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -76,12 +79,14 @@ export default function Navbar() {
                 >
                   My Lesson
                 </Link>
-                <Link
-                  to="/pricing/upgrade"
-                  className={isActive("/pricing/upgrade")}
-                >
-                  Pricing
-                </Link>
+                {!isPremium && (
+                  <Link
+                    to="/pricing/upgrade"
+                    className={isActive("/pricing/upgrade")}
+                  >
+                    Upgrade
+                  </Link>
+                )}
               </>
             )}
 

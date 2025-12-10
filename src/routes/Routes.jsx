@@ -2,9 +2,14 @@ import { createBrowserRouter } from "react-router";
 import Home from "../Pages/Home/Home";
 import MainLayout from "../layouts/MainLayout";
 import Lessons from "../pages/Lessons/Lessons";
-import LessonDetails from "../pages/LessonDetails/LessonDetails";
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
+import PremiumPlans from "../pages/Payments/PremiumPlans";
+import PaymentCancelled from "../pages/Dashboard/Payment/PaymentCancelled";
+import PaymentSuccess from "../pages/Dashboard/Payment/PaymentSuccess";
+import PrivateRoute from "./PrivateRoute";
+import DashBoardLayout from "../layouts/DashboardLayout";
+import LessonDetails from "../pages/Lessons/LessonDetails";
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +25,7 @@ export const router = createBrowserRouter([
         path: "/lessons/:id",
         element: <LessonDetails />,
       },
+
       {
         path: "/login",
         element: <Login />,
@@ -28,6 +34,19 @@ export const router = createBrowserRouter([
         path: "/register",
         element: <Register />,
       },
+    ],
+  },
+  {
+    path: "/dashboard",
+    element: (
+      <PrivateRoute>
+        <DashBoardLayout />
+      </PrivateRoute>
+    ),
+    children: [
+      { path: "pricing/upgrade", element: <PremiumPlans /> },
+      { path: "payment-success", element: <PaymentSuccess /> },
+      { path: "payment-cancel", element: <PaymentCancelled /> },
     ],
   },
 ]);
