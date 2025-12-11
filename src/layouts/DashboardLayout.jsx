@@ -3,7 +3,7 @@ import { NavLink, Outlet, Link } from "react-router";
 import { motion, AnimatePresence } from "framer-motion";
 import useAuth from "../hooks/useAuth";
 import useRole from "../hooks/useRole";
-
+import { IoBookSharp } from "react-icons/io5";
 // --- 🎨 Custom SVG Icon Components (No Dependencies) ---
 const Icons = {
   Logo: ({ className }) => (
@@ -162,12 +162,17 @@ const DashBoardLayout = () => {
   const { user, logout } = useAuth();
   const { role } = useRole();
   // Format Role Display
-  const displayRole = role?.charAt(0).toUpperCase() + role?.slice(1) || "User";
+  // const displayRole = role?.charAt(0).toUpperCase() + role?.slice(1) || "User";
 
   // --- Configuration ---
   const getRoleSpecificLinks = () => {
     const commonLinks = [
       { to: "/", icon: Icons.Home, label: "Home" },
+      {
+        to: "/dashboard/add-lesson",
+        icon: Icons.Clipboard,
+        label: "Add Lesson",
+      },
       { to: "/dashboard/my-parcels", icon: Icons.Package, label: "My Parcels" },
       {
         to: "/dashboard/payment-history",
@@ -183,7 +188,7 @@ const DashBoardLayout = () => {
         label: "Manage Users",
       },
       {
-        to: "/dashboard/approve-riders",
+        to: "/dashboard/add-lessons",
         icon: Icons.Clipboard,
         label: "Approve Riders",
       },
@@ -249,13 +254,14 @@ const DashBoardLayout = () => {
         <div className="h-20 flex items-center px-6 border-b border-base-200/50">
           <div className="flex items-center gap-3">
             <div className="bg-primary/10 p-2.5 rounded-xl text-primary flex-shrink-0">
-              <Icons.Logo className="w-6 h-6" />
+              {/* <Icons.Logo /> */}
+              <IoBookSharp className="w-6 h-6" />
             </div>
             <motion.span
               variants={textVariants}
               className="text-xl font-bold tracking-tight text-base-content"
             >
-              ZapShift
+              Digital Life Lessons
             </motion.span>
           </div>
         </div>
@@ -280,7 +286,7 @@ const DashBoardLayout = () => {
                 {user?.displayName || "User"}
               </h4>
               <span className="text-xs text-base-content/50 uppercase tracking-wider font-medium">
-                {displayRole}
+                {/* {displayRole} */}
               </span>
             </motion.div>
           </div>

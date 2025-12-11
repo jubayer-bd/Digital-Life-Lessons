@@ -10,6 +10,8 @@ import PaymentSuccess from "../pages/Dashboard/Payment/PaymentSuccess";
 import PrivateRoute from "./PrivateRoute";
 import DashBoardLayout from "../layouts/DashboardLayout";
 import LessonDetails from "../pages/Lessons/LessonDetails";
+import AddLesson from "../pages/Dashboard/Lessons/AddLesson";
+import UserProfile from "../pages/Lessons/UserProfile";
 
 export const router = createBrowserRouter([
   {
@@ -25,7 +27,7 @@ export const router = createBrowserRouter([
         path: "/lessons/:id",
         element: <LessonDetails />,
       },
-
+      { path: "/profile/:email", element: <UserProfile /> },
       {
         path: "/login",
         element: <Login />,
@@ -47,6 +49,7 @@ export const router = createBrowserRouter([
       { path: "pricing/upgrade", element: <PremiumPlans /> },
       { path: "payment-success", element: <PaymentSuccess /> },
       { path: "payment-cancel", element: <PaymentCancelled /> },
+      { path: "add-lesson", element: <AddLesson /> },
     ],
   },
 ]);

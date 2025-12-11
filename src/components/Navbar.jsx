@@ -9,7 +9,7 @@ export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
   const { isPremium } = useIsPremium();
-  console.log(isPremium);
+  // console.log(isPremium);
   const pathname = location.pathname;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -68,8 +68,8 @@ export default function Navbar() {
             {user && (
               <>
                 <Link
-                  to="/dashboard/add-lesson"
-                  className={isActive("/dashboard/add-lesson")}
+                  to="dashboard/add-lesson"
+                  className={isActive("dashboard/add-lesson")}
                 >
                   Add Lesson
                 </Link>

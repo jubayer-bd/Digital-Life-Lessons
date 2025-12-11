@@ -5,6 +5,7 @@ const LessonCard = ({ lesson, isUserPremium }) => {
   // 1. Logic: It is locked ONLY if lesson is premium AND user is NOT premium
   const isLocked = lesson.accessLevel === "premium" && !isUserPremium;
 
+
   return (
     <div className="card bg-base-100 shadow-lg hover:shadow-xl transition rounded-xl overflow-hidden relative border border-gray-100 h-full flex flex-col">
       {/* Image Wrapper */}

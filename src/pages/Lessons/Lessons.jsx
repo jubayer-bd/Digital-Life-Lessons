@@ -3,11 +3,12 @@ import { useQuery } from "@tanstack/react-query";
 import useAxios from "../../hooks/useAxios";
 import LessonCard from "./LessonCard";
 import useAuth from "../../hooks/useAuth"; // 1. Import your Auth hook
+import useIsPremium from "../../hooks/useIsPremimum";
 
 const Lessons = () => {
   const axiosSecure = useAxios();
   const { user } = useAuth(); // 2. Get current user data
-
+  const {isPremium} = useIsPremium();
   const {
     data: lessons = [],
     isLoading,
@@ -60,7 +61,7 @@ const Lessons = () => {
               key={lesson._id}
               lesson={lesson}
               // 3. Pass the user's premium status to the card
-              isUserPremium={user?.isPremium}
+              isUserPremium={isPremium}
             />
           ))}
         </div>
