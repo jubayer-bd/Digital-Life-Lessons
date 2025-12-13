@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
-import { AuthContext } from "../context/AuthContext";
-import useRole from "../hooks/useIsPremimum";
 import useIsPremium from "../hooks/usePremium";
+import { AuthContext } from "../Context/AuthContext";
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
@@ -140,6 +139,15 @@ export default function Navbar() {
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         Profile
+                      </Link>
+                    </div>
+
+                    <div className="py-2">
+                      <Link
+                        to="/dashboard"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Dashboard
                       </Link>
                     </div>
 

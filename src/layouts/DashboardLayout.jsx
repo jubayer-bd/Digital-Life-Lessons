@@ -1,24 +1,12 @@
 import React, { useState } from "react";
-import { NavLink, Outlet, Link } from "react-router";
-import { motion, AnimatePresence } from "framer-motion";
+import { NavLink, Outlet, Link } from "react-router-dom"; // Use react-router-dom
+import { motion } from "framer-motion";
 import useAuth from "../hooks/useAuth";
 import useRole from "../hooks/useRole";
 import { IoBookSharp } from "react-icons/io5";
-// --- 🎨 Custom SVG Icon Components (No Dependencies) ---
+
+// --- 🎨 Custom SVG Icon Components ---
 const Icons = {
-  Logo: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-    </svg>
-  ),
   Home: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
@@ -33,7 +21,7 @@ const Icons = {
       <polyline points="9 22 9 12 15 12 15 22"></polyline>
     </svg>
   ),
-  Package: ({ className }) => (
+  Book: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
       fill="none"
@@ -43,13 +31,24 @@ const Icons = {
       strokeLinejoin="round"
       className={className}
     >
-      <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
-      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-      <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-      <line x1="12" y1="22.08" x2="12" y2="12"></line>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
     </svg>
   ),
-  History: ({ className }) => (
+  Heart: ({ className }) => (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+    </svg>
+  ),
+  Plus: ({ className }) => (
     <svg
       viewBox="0 0 24 24"
       fill="none"
@@ -60,7 +59,8 @@ const Icons = {
       className={className}
     >
       <circle cx="12" cy="12" r="10"></circle>
-      <polyline points="12 6 12 12 16 14"></polyline>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
     </svg>
   ),
   Users: ({ className }) => (
@@ -77,38 +77,6 @@ const Icons = {
       <circle cx="9" cy="7" r="4"></circle>
       <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-    </svg>
-  ),
-  Clipboard: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-      <path d="M9 14l2 2 4-4"></path>
-    </svg>
-  ),
-  Motorbike: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <circle cx="5.5" cy="17.5" r="3.5" />
-      <circle cx="18.5" cy="17.5" r="3.5" />
-      <path d="M15 6h-5a1 1 0 0 0-1 1v4h-3v-3h-2v3h-2v2h6v2.1" />
-      <path d="M15 6l4 3.5v4" />
-      <path d="M18.5 14h-13" />
     </svg>
   ),
   Settings: ({ className }) => (
@@ -158,65 +126,46 @@ const Icons = {
 };
 
 const DashBoardLayout = () => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true); // Default open on desktop is usually better
   const { user, logout } = useAuth();
   const { role } = useRole();
-  // Format Role Display
-  // const displayRole = role?.charAt(0).toUpperCase() + role?.slice(1) || "User";
 
   // --- Configuration ---
   const getRoleSpecificLinks = () => {
+    // 1. Common Links (Everyone sees these)
     const commonLinks = [
-      { to: "/", icon: Icons.Home, label: "Home" },
-      {
-        to: "/dashboard/add-lesson",
-        icon: Icons.Clipboard,
-        label: "Add Lesson",
-      },
-      { to: "/dashboard/my-parcels", icon: Icons.Package, label: "My Parcels" },
-      {
-        to: "/dashboard/payment-history",
-        icon: Icons.History,
-        label: "Payment History",
-      },
+      { to: "/dashboard", icon: Icons.Home, label: "Overview" },
+      { to: "/dashboard/my-lessons", icon: Icons.Book, label: "My Lessons" },
+      { to: "/dashboard/saved-lessons", icon: Icons.Heart, label: "Saved" },
+      { to: "/dashboard/add-lesson", icon: Icons.Plus, label: "Create Lesson" },
     ];
 
+    // 2. Admin Links
     const adminLinks = [
       {
-        to: "/dashboard/users-managements",
+        to: "/dashboard/users-management",
         icon: Icons.Users,
         label: "Manage Users",
       },
       {
-        to: "/dashboard/add-lessons",
-        icon: Icons.Clipboard,
-        label: "Approve Riders",
-      },
-      {
-        to: "/dashboard/assign-riders",
-        icon: Icons.Clipboard,
-        label: "AssignRiders Riders",
+        to: "/dashboard/all-lessons",
+        icon: Icons.Book,
+        label: "All Lessons (Admin)",
       },
     ];
 
-    // const riderLinks = [
-    //   { to: "/dashboard/delivery-list", icon: Icons.Motorbike, label: "My Deliveries" },
-    // ];
-
     if (role === "admin") return [...commonLinks, ...adminLinks];
-    // if (role === 'rider') return [...commonLinks, ...riderLinks];
     return commonLinks;
   };
 
   const navItems = getRoleSpecificLinks();
 
   // --- Styles ---
-  // Active state now uses a gradient and shadow for a "Pop" effect
   const navLinkClasses = ({ isActive }) =>
     `flex items-center gap-4 p-3 rounded-xl transition-all duration-300 group overflow-hidden relative ${
       isActive
-        ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg shadow-primary/30 font-medium"
-        : "text-base-content/70 hover:bg-base-200 hover:text-base-content"
+        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-200 font-medium"
+        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
     }`;
 
   // --- Animation Variants ---
@@ -242,26 +191,25 @@ const DashBoardLayout = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-base-100 font-sans selection:bg-primary/20">
+    <div className="flex min-h-screen bg-gray-50 font-sans selection:bg-blue-100">
       {/* 🔮 Sidebar */}
       <motion.aside
-        initial="closed"
+        initial="open"
         animate={open ? "open" : "closed"}
         variants={sidebarVariants}
-        className="fixed top-0 left-0 z-50 h-screen bg-base-100 border-r border-base-200 flex flex-col shadow-2xl"
+        className="fixed top-0 left-0 z-50 h-screen bg-white border-r border-gray-200 flex flex-col shadow-xl"
       >
         {/* Header / Logo */}
-        <div className="h-20 flex items-center px-6 border-b border-base-200/50">
+        <div className="h-20 flex items-center px-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2.5 rounded-xl text-primary flex-shrink-0">
-              {/* <Icons.Logo /> */}
+            <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600 flex-shrink-0">
               <IoBookSharp className="w-6 h-6" />
             </div>
             <motion.span
               variants={textVariants}
-              className="text-xl font-bold tracking-tight text-base-content"
+              className="text-xl font-bold tracking-tight text-gray-800"
             >
-              Digital Life Lessons
+              Digital Life
             </motion.span>
           </div>
         </div>
@@ -269,33 +217,34 @@ const DashBoardLayout = () => {
         {/* User Card (Sidebar) */}
         <div className="px-4 py-6">
           <div
-            className={`flex items-center gap-3 p-3 rounded-2xl bg-base-200/50 border border-base-200 ${
+            className={`flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 ${
               !open && "justify-center p-2"
             }`}
           >
             <div className="avatar flex-shrink-0">
-              <div className="w-10 h-10 rounded-full ring-2 ring-white shadow-sm">
+              <div className="w-10 h-10 rounded-full ring-2 ring-white shadow-sm overflow-hidden">
                 <img
-                  src={user?.photoURL || "/placeholder-avatar.png"}
+                  src={user?.photoURL || "https://i.pravatar.cc/150"}
                   alt="User"
+                  className="w-full h-full object-cover"
                 />
               </div>
             </div>
             <motion.div variants={textVariants} className="overflow-hidden">
-              <h4 className="font-semibold text-sm truncate">
+              <h4 className="font-semibold text-sm truncate text-gray-700">
                 {user?.displayName || "User"}
               </h4>
-              <span className="text-xs text-base-content/50 uppercase tracking-wider font-medium">
-                {/* {displayRole} */}
+              <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">
+                {role || "Member"}
               </span>
             </motion.div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 space-y-2 scrollbar-thin scrollbar-thumb-base-300">
+        <nav className="flex-1 overflow-y-auto px-4 space-y-2 scrollbar-thin scrollbar-thumb-gray-200">
           <p
-            className={`px-4 text-xs font-bold text-base-content/40 uppercase tracking-widest mb-2 ${
+            className={`px-4 text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ${
               !open && "text-center"
             }`}
           >
@@ -315,17 +264,17 @@ const DashBoardLayout = () => {
         </nav>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-base-200 space-y-2">
+        <div className="p-4 border-t border-gray-100 space-y-2">
           <Link
-            to="/settings"
-            className="flex items-center gap-4 p-3 rounded-xl text-base-content/70 hover:bg-base-200 hover:text-base-content transition-all"
+            to="/profile"
+            className="flex items-center gap-4 p-3 rounded-xl text-gray-600 hover:bg-gray-100 transition-all"
           >
             <Icons.Settings className="w-6 h-6 flex-shrink-0" />
             <motion.span variants={textVariants}>Settings</motion.span>
           </Link>
           <button
             onClick={logout}
-            className="w-full flex items-center gap-4 p-3 rounded-xl text-error hover:bg-error/5 transition-all"
+            className="w-full flex items-center gap-4 p-3 rounded-xl text-red-500 hover:bg-red-50 transition-all"
           >
             <Icons.LogOut className="w-6 h-6 flex-shrink-0" />
             <motion.span variants={textVariants} className="font-medium">
@@ -341,21 +290,20 @@ const DashBoardLayout = () => {
           open ? "ml-[280px]" : "ml-[88px]"
         }`}
       >
-        {/* Glassmorphic Top Navbar */}
-        <header className="sticky top-0 z-40 bg-base-100/80 backdrop-blur-md border-b border-base-200 h-20 px-6 flex items-center justify-between">
+        {/* Navbar */}
+        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200 h-20 px-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setOpen(!open)}
-              className="btn btn-circle btn-ghost btn-sm hover:bg-base-200 text-base-content/70"
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
             >
               <Icons.Menu className="w-5 h-5" />
             </button>
-            <h2 className="text-lg font-bold text-base-content/80 hidden sm:block">
-              Dashboard Overview
+            <h2 className="text-lg font-bold text-gray-800 hidden sm:block">
+              Dashboard
             </h2>
           </div>
 
-          {/* Top Right Profile Actions */}
           <div className="flex items-center gap-4">
             <div className="dropdown dropdown-end">
               <div
@@ -363,25 +311,25 @@ const DashBoardLayout = () => {
                 role="button"
                 className="btn btn-ghost btn-circle avatar"
               >
-                <div className="w-10 rounded-full ring-2 ring-primary/20 hover:ring-primary transition-all">
+                <div className="w-10 rounded-full">
                   <img
-                    src={user?.photoURL || "/placeholder-avatar.png"}
+                    src={user?.photoURL || "https://i.pravatar.cc/150"}
                     alt="User"
                   />
                 </div>
               </div>
               <ul
                 tabIndex={0}
-                className="mt-3 z-[1] p-2 shadow-xl menu menu-sm dropdown-content bg-base-100 rounded-2xl w-56 border border-base-200"
+                className="mt-3 z-[1] p-2 shadow-xl menu menu-sm dropdown-content bg-white rounded-2xl w-56 border border-gray-100 text-gray-700"
               >
-                <li className="px-2 py-2 mb-2 border-b border-base-200">
+                <li className="px-2 py-2 mb-2 border-b border-gray-100">
                   <span className="font-bold">{user?.displayName}</span>
                 </li>
                 <li>
-                  <Link to="/profile">Profile</Link>
+                  <Link to="/">Home</Link>
                 </li>
                 <li>
-                  <button onClick={logout} className="text-error">
+                  <button onClick={logout} className="text-red-500">
                     Logout
                   </button>
                 </li>

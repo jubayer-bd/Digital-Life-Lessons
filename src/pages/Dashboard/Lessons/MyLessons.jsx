@@ -12,9 +12,12 @@ const MyLessons = () => {
   const [editingLesson, setEditingLesson] = useState(null);
   const [formData, setFormData] = useState({});
 
-  // ---------- Fetch My Lessons ----------
+  // Define the key in a variable to ensure consistency across Query and Mutations
+  const queryKey = ["my-lessons", user?.email];
+
+  // -------- Fetch Lessons --------
   const { data: lessons = [], isLoading } = useQuery({
-    queryKey: ["my-lessons", user?.email],
+    queryKey: queryKey,
     enabled: !!user?.email,
     queryFn: async () => {
       const res = await axiosSecure.get("/lessons/my-lessons");
@@ -22,46 +25,56 @@ const MyLessons = () => {
     },
   });
 
-  // ---------- Soft Delete Mutation ----------
+  // -------- Soft Delete Mutation --------
   const deleteMutation = useMutation({
     mutationFn: (id) => axiosSecure.patch(`/lessons/${id}/trash`),
     onMutate: async (id) => {
-      await queryClient.cancelQueries(["my-lessons"]);
-      const previous = queryClient.getQueryData(["my-lessons"]);
-      queryClient.setQueryData(["my-lessons"], (old) =>
-        old.filter((lesson) => lesson._id !== id)
-      );
+      // 1. Cancel ongoing refetches
+      await queryClient.cancelQueries({ queryKey });
+
+      // 2. Get previous data
+      const previous = queryClient.getQueryData(queryKey);
+
+      // 3. Optimistically update
+      queryClient.setQueryData(queryKey, (old) => {
+        return old ? old.filter((lesson) => lesson._id !== id) : [];
+      });
+
+      // 4. Return context
       return { previous };
     },
     onError: (err, id, context) => {
-      queryClient.setQueryData(["my-lessons"], context.previous);
+      queryClient.setQueryData(queryKey, context.previous);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries(["my-lessons"]);
-    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
 
-  // ---------- Edit Mutation ----------
+  // -------- Edit Mutation (FIXED SYNTAX) --------
   const editMutation = useMutation({
-    mutationFn: ({ id, updatedData }) =>
+    // FIX 1: Moved mutationFn inside the object (Required for v5)
+    mutationFn: ({ id, updatedData }) => 
       axiosSecure.patch(`/lessons/${id}`, updatedData),
+    
     onMutate: async ({ id, updatedData }) => {
-      await queryClient.cancelQueries(["my-lessons"]);
-      const previous = queryClient.getQueryData(["my-lessons"]);
-      queryClient.setQueryData(["my-lessons"], (old) =>
-        old.map((lesson) =>
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+
+      // FIX 2: Used the correct queryKey variable
+      queryClient.setQueryData(queryKey, (old) => {
+        if (!old) return [];
+        return old.map((lesson) =>
           lesson._id === id ? { ...lesson, ...updatedData } : lesson
-        )
-      );
+        );
+      });
       return { previous };
     },
     onError: (err, variables, context) => {
-      queryClient.setQueryData(["my-lessons"], context.previous);
+      queryClient.setQueryData(queryKey, context.previous);
     },
-    onSettled: () => queryClient.invalidateQueries(["my-lessons"]),
+    onSettled: () => queryClient.invalidateQueries({ queryKey }),
   });
 
-  // ---------- Handlers ----------
+  // -------- Handlers --------
   const handleEditClick = (lesson) => {
     setEditingLesson(lesson);
     setFormData({ ...lesson });
@@ -69,13 +82,14 @@ const MyLessons = () => {
 
   const handleEditSubmit = (e) => {
     e.preventDefault();
+    // Pass the arguments as a single object to mutate
     editMutation.mutate({ id: editingLesson._id, updatedData: formData });
     setEditingLesson(null);
   };
 
   const handleDelete = (id) => deleteMutation.mutate(id);
 
-  // ---------- Loading ----------
+  // -------- Loading --------
   if (isLoading) {
     return (
       <div className="flex justify-center py-20">
@@ -87,7 +101,6 @@ const MyLessons = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-10">
       <h2 className="text-3xl font-bold text-gray-800 mb-6">My Lessons</h2>
-
       {lessons.length === 0 && (
         <div className="text-center py-20 text-gray-500">
           You haven’t created any lessons yet.
@@ -113,10 +126,11 @@ const MyLessons = () => {
               <p className="text-sm text-gray-600 line-clamp-3">
                 {lesson.description}
               </p>
-
               <div className="flex flex-wrap gap-2 text-xs">
                 <span className="badge badge-outline">{lesson.category}</span>
-                <span className="badge badge-outline">{lesson.emotionalTone}</span>
+                <span className="badge badge-outline">
+                  {lesson.emotionalTone}
+                </span>
                 <span
                   className={`badge ${
                     lesson.accessLevel === "premium"
@@ -127,7 +141,6 @@ const MyLessons = () => {
                   {lesson.accessLevel}
                 </span>
               </div>
-
               <div className="flex justify-between items-center pt-2 text-sm text-gray-500">
                 <div className="flex items-center gap-2">
                   <Heart size={16} /> {lesson.likesCount}
@@ -145,16 +158,17 @@ const MyLessons = () => {
                 </div>
               </div>
 
+              {/* Actions */}
               <div className="flex gap-2 pt-3">
                 <button
                   onClick={() => handleEditClick(lesson)}
-                  className="btn btn-sm btn-outline w-full flex items-center justify-center gap-1"
+                  className="btn btn-sm btn-outline  flex items-center justify-center gap-1"
                 >
                   <Edit2 size={16} /> Edit
                 </button>
                 <button
                   onClick={() => handleDelete(lesson._id)}
-                  className="btn btn-sm btn-error btn-outline w-full flex items-center justify-center gap-1"
+                  className="btn btn-sm btn-error btn-outline flex items-center justify-center gap-1"
                 >
                   <Trash2 size={16} /> Delete
                 </button>
@@ -164,7 +178,7 @@ const MyLessons = () => {
         ))}
       </div>
 
-      {/* Edit Modal */}
+      {/* -------- Edit Modal -------- */}
       {editingLesson && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-xl w-full max-w-lg relative">
@@ -180,7 +194,7 @@ const MyLessons = () => {
                 type="text"
                 placeholder="Title"
                 className="input input-bordered w-full"
-                value={formData.title}
+                value={formData.title || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
@@ -188,7 +202,7 @@ const MyLessons = () => {
               <textarea
                 placeholder="Description"
                 className="input input-bordered w-full h-24"
-                value={formData.description}
+                value={formData.description || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
@@ -197,7 +211,7 @@ const MyLessons = () => {
                 type="text"
                 placeholder="Category"
                 className="input input-bordered w-full"
-                value={formData.category}
+                value={formData.category || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, category: e.target.value })
                 }
@@ -206,7 +220,7 @@ const MyLessons = () => {
                 type="text"
                 placeholder="Emotional Tone"
                 className="input input-bordered w-full"
-                value={formData.emotionalTone}
+                value={formData.emotionalTone || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, emotionalTone: e.target.value })
                 }
@@ -215,14 +229,14 @@ const MyLessons = () => {
                 type="text"
                 placeholder="Image URL"
                 className="input input-bordered w-full"
-                value={formData.image}
+                value={formData.image || ""}
                 onChange={(e) =>
                   setFormData({ ...formData, image: e.target.value })
                 }
               />
               <select
                 className="select select-bordered w-full"
-                value={formData.accessLevel}
+                value={formData.accessLevel || "free"}
                 onChange={(e) =>
                   setFormData({ ...formData, accessLevel: e.target.value })
                 }
@@ -232,7 +246,7 @@ const MyLessons = () => {
               </select>
               <select
                 className="select select-bordered w-full"
-                value={formData.visibility}
+                value={formData.visibility || "public"}
                 onChange={(e) =>
                   setFormData({ ...formData, visibility: e.target.value })
                 }

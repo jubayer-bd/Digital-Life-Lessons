@@ -19,24 +19,34 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
-  const handleLogin = (data) => {
+  const handleLogin = async (data) => {
     setLoading(true);
-    singInUser(data.email, data.password)
-      .then(() => {
-        toast.success("Login Successful!");
-        navigate(location?.state || "/");
-      })
-      .catch(() => {
-        toast.error("Invalid credentials. Try again.");
-      })
-      .finally(() => setLoading(false));
+    try {
+      const result = await singInUser(data.email, data.password);
+      const loginInfo = {
+        email: result.user.email,
+      };
+      const res = await axiosSecure.post("/auth/login", loginInfo);
+      if (res.data?.token) {
+        localStorage.setItem("access-token", res.data.token);
+      }
+
+      toast.success("Login Successful!");
+      navigate(location?.state || "/");
+    } catch (error) {
+      console.error(error);
+      toast.error("Invalid credentials. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // ----------social login handler ----------
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
     googleSignIn()
       .then((result) => {
-        toast.success("SignUp SuccessFully");
+        toast.success("SignUp Successfully");
         const userInfo = {
           email: result.user.email,
           displayName: result.user.displayName,
@@ -50,107 +60,105 @@ const Login = () => {
         });
         navigate(location?.state || "/");
       })
-      .catch(() => toast("SignUp Failed"));
+      .catch(() => toast.error("SignUp Failed"))
+      .finally(() => setLoading(false));
   };
   return (
     <div className="py-10 px-5 rounded-xl bg-white">
-      <div className="pb-5">
-      </div>
-    
-        {/* LEFT SECTION */}
-        <motion.div
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center justify-center px-10"
-        >
-          <div className="w-full max-w-md">
-            <h2 className="text-4xl font-extrabold mb-2 text-gray-800">
-              Welcome Back
-            </h2>
-            <p className="text-gray-500 mb-6">Login with ZapShift</p>
+      <div className="pb-5"></div>
 
-            <form onSubmit={handleSubmit(handleLogin)} className="space-y-3">
-              {/* Email */}
-              <div>
-                <label className="font-semibold text-sm">Email</label>
+      {/* LEFT SECTION */}
+      <motion.div
+        initial={{ opacity: 0, x: -40 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6 }}
+        className="flex items-center justify-center px-10"
+      >
+        <div className="w-full max-w-md">
+          <h2 className="text-4xl font-extrabold mb-2 text-gray-800">
+            Welcome Back
+          </h2>
+          <p className="text-gray-500 mb-6">Login with ZapShift</p>
+
+          <form onSubmit={handleSubmit(handleLogin)} className="space-y-3">
+            {/* Email */}
+            <div>
+              <label className="font-semibold text-sm">Email</label>
+              <input
+                type="email"
+                {...register("email", { required: true })}
+                placeholder="Email"
+                className="input input-bordered w-full"
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs">Email is required</p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="font-semibold text-sm">Password</label>
+              <div className="relative">
                 <input
-                  type="email"
-                  {...register("email", { required: true })}
-                  placeholder="Email"
+                  type={showPass ? "text" : "password"}
+                  {...register("password", { required: true })}
+                  placeholder="Password"
                   className="input input-bordered w-full"
                 />
-                {errors.email && (
-                  <p className="text-red-500 text-xs">Email is required</p>
-                )}
-              </div>
-
-              {/* Password */}
-              <div>
-                <label className="font-semibold text-sm">Password</label>
-                <div className="relative">
-                  <input
-                    type={showPass ? "text" : "password"}
-                    {...register("password", { required: true })}
-                    placeholder="Password"
-                    className="input input-bordered w-full"
-                  />
-                  <span
-                    className="absolute right-3 top-3 cursor-pointer text-sm text-gray-600"
-                    onClick={() => setShowPass(!showPass)}
-                  >
-                    {showPass ? "Hide" : "Show"}
-                  </span>
-                </div>
-                {errors.password && (
-                  <p className="text-red-500 text-xs">Password is required</p>
-                )}
-              </div>
-
-              <a className="link link-hover text-sm">Forgot Password?</a>
-
-              {/* Login Button */}
-              <button
-                disabled={loading}
-                className="btn btn-primary text-black w-full mt-2"
-              >
-                {loading ? (
-                  <span class="loading loading-dots loading-md"></span>
-                ) : (
-                  "Login"
-                )}
-              </button>
-
-              <p className="text-center text-gray-600 text-sm">
-                Don’t have an account?{" "}
-                <Link
-                  to={"/auth/register"}
-                  state={location.state}
-                  className="font-bold text-primary"
+                <span
+                  className="absolute right-3 top-3 cursor-pointer text-sm text-gray-600"
+                  onClick={() => setShowPass(!showPass)}
                 >
-                  Register
-                </Link>
-              </p>
+                  {showPass ? "Hide" : "Show"}
+                </span>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs">Password is required</p>
+              )}
+            </div>
 
-              <div className="divider">OR</div>
+            <a className="link link-hover text-sm">Forgot Password?</a>
 
-              {/* Google Button */}
-              <button
-                type="button"
-                onClick={handleGoogleSignIn}
-                className="btn w-full border"
+            {/* Login Button */}
+            <button
+              disabled={loading}
+              className="btn btn-primary text-black w-full mt-2"
+            >
+              {loading ? (
+                <span class="loading loading-dots loading-md"></span>
+              ) : (
+                "Login"
+              )}
+            </button>
+
+            <p className="text-center text-gray-600 text-sm">
+              Don’t have an account?{" "}
+              <Link
+                to={"/auth/register"}
+                state={location.state}
+                className="font-bold text-primary"
               >
-                <img
-                  src="https://www.svgrepo.com/show/475656/google-color.svg"
-                  className="w-5 h-5"
-                />
-                Login with Google
-              </button>
-            </form>
-          </div>
-        </motion.div>
+                Register
+              </Link>
+            </p>
 
-      
+            <div className="divider">OR</div>
+
+            {/* Google Button */}
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              className="btn w-full border"
+            >
+              <img
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                className="w-5 h-5"
+              />
+              Login with Google
+            </button>
+          </form>
+        </div>
+      </motion.div>
     </div>
   );
 };
