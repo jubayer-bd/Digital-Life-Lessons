@@ -14,6 +14,7 @@ import UserProfile from "../pages/Lessons/UserProfile";
 import DashboardHome from "../pages/Dashboard/DashboardHome";
 import PremiumPlans from "../pages/Payments/PremiumPlans";
 import MyLessons from "../pages/Dashboard/Lessons/MyLessons";
+import SavedLessons from "../pages/Dashboard/Lessons/SavedLessons";
 
 export const router = createBrowserRouter([
   {
@@ -55,6 +56,7 @@ export const router = createBrowserRouter([
 
       { path: "add-lesson", element: <AddLesson /> },
       { path: "my-lessons", element: <MyLessons /> },
+      { path: "saved-lessons", element: <SavedLessons /> },
     ],
   },
 ]);

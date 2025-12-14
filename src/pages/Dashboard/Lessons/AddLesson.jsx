@@ -2,7 +2,7 @@ import React from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import { Info, Lock } from "lucide-react"; // Added Lock icon
+import { Info, Lock } from "lucide-react";
 import useAuth from "../../../hooks/useAuth";
 import useAxios from "../../../hooks/useAxios";
 import useIsPremium from "../../../hooks/useIsPremimum";
@@ -20,81 +20,97 @@ const tones = ["Motivational", "Sad", "Realization", "Gratitude"];
 const AddLesson = () => {
   const { user } = useAuth();
   const axiosSecure = useAxios();
-
-  // Destructure isLoading to prevent rendering before we know the status
   const { isPremium, isLoading: premiumLoading } = useIsPremium();
 
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset } = useForm({
+    defaultValues: {
+      accessLevel: "free",
+      visibility: "public",
+    },
+  });
 
-  // --- SUBMIT MUTATION ---
+  /* ======================
+      CREATE LESSON
+  ====================== */
   const mutation = useMutation({
-    mutationFn: async (data) => {
-      const res = await axiosSecure.post("/lessons", data);
+    mutationFn: async (lesson) => {
+      const res = await axiosSecure.post("/lessons", lesson);
       return res.data;
     },
     onSuccess: () => {
-      toast.success("Lesson created successfully!");
+      toast.success("🎉 Lesson created successfully!");
       reset();
     },
-    onError: () => toast.error("Failed to create lesson"),
+    onError: () => {
+      toast.error("Failed to create lesson");
+    },
   });
 
   const onSubmit = (data) => {
-    // 1. Fixed: Use proper Firebase keys (displayName/photoURL)
-    data.authorName = user?.displayName;
-    data.authorEmail = user?.email;
-    data.authorImage = user?.photoURL;
+    const lessonData = {
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      emotionalTone: data.emotionalTone,
+      image: data.image || "",
+      visibility: data.visibility,
+      accessLevel: isPremium ? data.accessLevel : "free",
 
-    data.createdAt = new Date().toISOString();
-    data.likes = [];
-    data.favorites = [];
-    data.likesCount = 0;
-    data.favoritesCount = 0;
+      authorName: user?.displayName,
+      authorEmail: user?.email,
+      authorImage: user?.photoURL,
 
-    // Force free if user manipulates DOM to select premium
-    if (!isPremium && data.accessLevel === "premium") {
-      data.accessLevel = "free";
-    }
+      createdAt: new Date(),
+      viewCount: 0,
+      likes: [],
+      favorites: [],
+    };
 
-    mutation.mutate(data);
+    mutation.mutate(lessonData);
   };
 
-  if (premiumLoading) return <div>Loading...</div>;
+  if (premiumLoading) {
+    return (
+      <div className="flex justify-center py-20 text-gray-400">Loading...</div>
+    );
+  }
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div className="max-w-3xl mx-auto p-8 bg-white rounded-2xl shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">
         Create New Lesson
       </h2>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* TITLE */}
         <div>
           <label className="block font-semibold mb-1">Lesson Title</label>
           <input
             {...register("title", { required: true })}
-            className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="w-full px-4 py-3 rounded-lg bg-gray-100 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
             placeholder="Enter lesson title"
           />
         </div>
 
         {/* DESCRIPTION */}
         <div>
-          <label className="block font-semibold mb-1">Full Description</label>
+          <label className="block font-semibold mb-1">
+            Full Description / Insight
+          </label>
           <textarea
             {...register("description", { required: true })}
-            className="w-full border p-3 rounded-lg h-40 focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Write your insight or story here..."
+            className="w-full px-4 py-3 rounded-lg bg-gray-100 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none h-40"
+            placeholder="Write your story or life lesson..."
           />
         </div>
 
+        {/* CATEGORY & TONE */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* CATEGORY */}
           <div>
             <label className="block font-semibold mb-1">Category</label>
             <select
               {...register("category", { required: true })}
-              className="w-full border p-3 rounded-lg bg-white"
+              className="w-full px-4 py-3 rounded-lg bg-gray-100 focus:bg-white"
             >
               <option value="">Select category</option>
               {categories.map((c) => (
@@ -105,12 +121,11 @@ const AddLesson = () => {
             </select>
           </div>
 
-          {/* EMOTIONAL TONE */}
           <div>
             <label className="block font-semibold mb-1">Emotional Tone</label>
             <select
               {...register("emotionalTone", { required: true })}
-              className="w-full border p-3 rounded-lg bg-white"
+              className="w-full px-4 py-3 rounded-lg bg-gray-100 focus:bg-white"
             >
               <option value="">Select tone</option>
               {tones.map((t) => (
@@ -129,26 +144,25 @@ const AddLesson = () => {
           </label>
           <input
             {...register("image")}
-            className="w-full border p-3 rounded-lg"
-            placeholder="Paste an image URL"
+            className="w-full px-4 py-3 rounded-lg bg-gray-100 focus:bg-white"
+            placeholder="https://example.com/image.jpg"
           />
         </div>
 
+        {/* PRIVACY & ACCESS */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* PRIVACY */}
           <div>
             <label className="block font-semibold mb-1">Privacy</label>
             <select
-              {...register("visibility", { required: true })}
-              className="w-full border p-3 rounded-lg bg-white"
+              {...register("visibility")}
+              className="w-full px-4 py-3 rounded-lg bg-gray-100"
             >
               <option value="public">Public</option>
               <option value="private">Private</option>
             </select>
           </div>
 
-          {/* ACCESS LEVEL */}
-          <div className="relative">
+          <div>
             <label className="block font-semibold mb-1 flex items-center gap-2">
               Access Level
               {!isPremium && <Lock size={14} className="text-gray-400" />}
@@ -157,30 +171,30 @@ const AddLesson = () => {
             <select
               {...register("accessLevel")}
               disabled={!isPremium}
-              className={`w-full border p-3 rounded-lg ${
-                !isPremium
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-white"
+              className={`w-full px-4 py-3 rounded-lg ${
+                isPremium
+                  ? "bg-gray-100"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
-              defaultValue="free"
             >
               <option value="free">Free</option>
               <option value="premium">Premium</option>
             </select>
 
             {!isPremium && (
-              <div className="flex items-center gap-2 mt-1 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+              <div className="flex items-center gap-2 mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded-lg">
                 <Info size={14} />
-                <span>Upgrade to Premium to create paid content.</span>
+                Upgrade to Premium to create paid lessons
               </div>
             )}
           </div>
         </div>
 
+        {/* SUBMIT */}
         <button
           type="submit"
           disabled={mutation.isPending}
-          className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition shadow-lg disabled:opacity-50"
+          className="w-full py-3 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition disabled:opacity-60"
         >
           {mutation.isPending ? "Publishing..." : "Create Lesson"}
         </button>

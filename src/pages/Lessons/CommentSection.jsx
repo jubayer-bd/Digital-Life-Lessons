@@ -4,7 +4,11 @@ import { Send } from "lucide-react";
 import useAxios from "../../hooks/useAxios";
 
 const CommentCard = ({ comment }) => {
-  const formattedDate = new Date(comment.createdAt).toLocaleString("en-US", {
+  const formattedDate = new Date(
+    typeof comment.createdAt === "number"
+      ? comment.createdAt
+      : comment.createdAt
+  ).toLocaleString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -95,7 +99,7 @@ const CommentSection = ({ lessonId, user }) => {
         {user ? (
           <form onSubmit={handlePostComment} className="space-y-4">
             <textarea
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 resize-y"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary resize-y"
               rows="3"
               placeholder={`Post a comment as ${user.displayName}...`}
               value={newCommentContent}
@@ -107,7 +111,7 @@ const CommentSection = ({ lessonId, user }) => {
             <div className="flex justify-end">
               <button
                 type="submit"
-                className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-6 rounded-full hover:bg-blue-700 transition disabled:opacity-50"
+                className="flex items-center gap-2 bg-primary text-white font-semibold py-2 px-6 rounded-full hover:bg-blue-700 transition disabled:opacity-50"
                 disabled={isPosting || newCommentContent.trim().length === 0}
               >
                 {isPosting ? "Posting..." : "Post Comment"} <Send size={18} />
