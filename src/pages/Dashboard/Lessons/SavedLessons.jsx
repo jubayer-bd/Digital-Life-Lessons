@@ -18,10 +18,15 @@ const SavedLessons = () => {
 
   /* ================= FETCH SAVED ================= */
   const { data: lessons = [], isLoading } = useQuery({
-    queryKey,
-    enabled: !!user?.email,
+    queryKey: ["saved-lessons", category, tone],
     queryFn: async () => {
-      const res = await axiosSecure.get("/lessons/saved");
+      const params = {};
+      if (category) params.category = category;
+      if (tone) params.tone = tone;
+
+      const res = await axiosSecure.get("/lessons/saved", {
+        params,
+      });
       return res.data;
     },
   });

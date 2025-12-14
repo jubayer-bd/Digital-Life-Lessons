@@ -57,6 +57,7 @@ export const router = createBrowserRouter([
       { path: "add-lesson", element: <AddLesson /> },
       { path: "my-lessons", element: <MyLessons /> },
       { path: "saved-lessons", element: <SavedLessons /> },
+      {path:'profile', element: }
     ],
   },
 ]);
