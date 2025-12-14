@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
-import { format } from "date-fns"; // Optional: for nice date formatting
+import { format } from "date-fns";
+import useIsPremium from "../../hooks/useIsPremimum";
 
-const LessonCard = ({ lesson, isUserPremium }) => {
-  // 1. Logic: It is locked ONLY if lesson is premium AND user is NOT premium
+const LessonCard = ({ lesson }) => {
+  const { isPremium: isUserPremium } = useIsPremium();
   const isLocked = lesson.accessLevel === "premium" && !isUserPremium;
-
 
   return (
     <div className="card bg-base-100 shadow-lg hover:shadow-xl transition rounded-xl overflow-hidden relative border border-gray-100 h-full flex flex-col">
@@ -36,8 +36,10 @@ const LessonCard = ({ lesson, isUserPremium }) => {
             {lesson.title}
           </h2>
           <span className="text-xs text-gray-400">
-             {/* Fallback if you don't use date-fns: new Date(lesson.createdAt).toLocaleDateString() */}
-             {lesson.createdAt ? format(new Date(lesson.createdAt), "MMM d, yyyy") : "Date N/A"}
+            {/* Fallback if you don't use date-fns: new Date(lesson.createdAt).toLocaleDateString() */}
+            {lesson.createdAt
+              ? format(new Date(lesson.createdAt), "MMM d, yyyy")
+              : "Date N/A"}
           </span>
         </div>
 
@@ -58,8 +60,8 @@ const LessonCard = ({ lesson, isUserPremium }) => {
           <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded">
             {lesson.category}
           </span>
-          
-           {/* REQUIRED: Emotional Tone */}
+
+          {/* REQUIRED: Emotional Tone */}
           <span className="bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100">
             {lesson.emotionalTone || "Neutral"}
           </span>
@@ -83,8 +85,12 @@ const LessonCard = ({ lesson, isUserPremium }) => {
               className="w-8 h-8 rounded-full object-cover border border-gray-200"
             />
             <div className="flex flex-col">
-                <span className="text-xs font-semibold text-gray-700">{lesson.authorName}</span>
-                <span className="text-[10px] text-gray-400">{lesson.likesCount} Likes</span>
+              <span className="text-xs font-semibold text-gray-700">
+                {lesson.authorName}
+              </span>
+              <span className="text-[10px] text-gray-400">
+                {lesson.likesCount} Likes
+              </span>
             </div>
           </div>
 

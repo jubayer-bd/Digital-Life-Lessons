@@ -27,6 +27,7 @@ import useAxios from "../../hooks/useAxios";
 import useAuth from "../../hooks/useAuth";
 import useIsPremium from "../../hooks/useIsPremimum";
 import toast from "react-hot-toast";
+import PageLoader from "../../components/PageLoader";
 
 const LessonDetails = () => {
   const { id } = useParams();
@@ -72,8 +73,7 @@ const LessonDetails = () => {
     }
   }, [lesson, user]);
 
-  if (isLoading)
-    return <div className="text-center py-20 text-lg">Loading Lesson...</div>;
+  if (isLoading) return <PageLoader text="loading lessons ....." />;
   if (isError)
     return (
       <div className="text-center py-20 text-red-500">
@@ -131,11 +131,10 @@ const LessonDetails = () => {
       toast.success(data.message);
 
       // 4. Refetch to ensure data consistency with server
-      // Note: We do NOT manually update state here again, as 
+      // Note: We do NOT manually update state here again, as
       // the optimistic update handled the visual change.
       // Refetch will trigger the useEffect above to ensure strict sync.
       refetch();
-      
     } catch (error) {
       // 5. Rollback on Error
       console.error(error);
@@ -282,8 +281,8 @@ const LessonDetails = () => {
       {/* RELATED LESSONS */}
       {/* Uncommented and passed logic to ensure it doesn't break if props are missing */}
       <div>
-         <h3 className="text-2xl font-bold mb-6">More like this</h3>
-         {/* <RelatedLessons
+        <h3 className="text-2xl font-bold mb-6">More like this</h3>
+        {/* <RelatedLessons
            currentCategory={lesson?.category}
            currentTone={lesson?.emotionalTone}
            currentId={lesson?._id}

@@ -2,6 +2,7 @@ import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useAxios from "../../hooks/useAxios";
 import { useQuery } from "@tanstack/react-query";
+import PageLoader from "../../components/PageLoader";
 
 const UserProfile = () => {
   const { email } = useParams();
@@ -27,7 +28,7 @@ const UserProfile = () => {
   });
 
   if (userLoading || lessonsLoading)
-    return <div className="text-center py-20">Loading...</div>;
+    return <PageLoader text="profile is loading"/>
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
