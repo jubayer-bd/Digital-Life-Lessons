@@ -1,345 +1,221 @@
 import React, { useState } from "react";
-import { NavLink, Outlet, Link } from "react-router-dom"; // Use react-router-dom
+import { Link, NavLink, Outlet } from "react-router-dom";
 import { motion } from "framer-motion";
 import useAuth from "../hooks/useAuth";
 import useRole from "../hooks/useRole";
-import { IoBookSharp } from "react-icons/io5";
+import PageLoader from "../components/PageLoader";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Heart,
+  PlusCircle,
+  Users,
+  Flag,
+  UserCircle,
+  LogOut,
+  Menu,
+  ShieldCheck,
+  BookMarked,
+} from "lucide-react";
 
-// --- 🎨 Custom SVG Icon Components ---
-const Icons = {
-  Home: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
+// 1. DATA MOVED OUTSIDE COMPONENT (Performance)
+const USER_LINKS = [
+  { to: "/dashboard", icon: LayoutDashboard, label: "Overview", end: true },
+  { to: "/dashboard/my-lessons", icon: BookOpen, label: "My Lessons" },
+  { to: "/dashboard/saved-lessons", icon: Heart, label: "Saved Lessons" },
+  { to: "/dashboard/add-lesson", icon: PlusCircle, label: "Create Lesson" },
+];
+
+// Fix: Add 'end: true' to the first link
+const ADMIN_LINKS = [
+  {
+    to: "/dashboard/admin",
+    icon: ShieldCheck,
+    label: "Admin Stats",
+    end: true, // <--- THIS WAS MISSING
+  },
+  { to: "/dashboard/admin/manage-users", icon: Users, label: "Manage Users" },
+  {
+    to: "/dashboard/admin/manage-lessons",
+    icon: BookMarked,
+    label: "Manage Lessons",
+  },
+  {
+    to: "/dashboard/admin/reported-lessons",
+    icon: Flag,
+    label: "Reported Lessons",
+  },
+  { to: "/dashboard/admin/profile", icon: UserCircle, label: "Admin Profile" },
+];
+
+// 2. REUSABLE NAV ITEM COMPONENT (Clean Code)
+const NavItem = ({
+  to,
+  icon: Icon,
+  label,
+  open,
+  end = false,
+  type = "user",
+}) => {
+  // Define styles based on type (user vs admin)
+  const activeStyle =
+    type === "admin"
+      ? "bg-red-500 text-white shadow-md"
+      : "bg-blue-600 text-white shadow-md";
+
+  const hoverStyle =
+    type === "admin"
+      ? "text-gray-600 hover:bg-red-50 hover:text-red-600"
+      : "text-gray-600 hover:bg-gray-100 hover:text-blue-600";
+
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive }) =>
+        `flex items-center gap-4 p-3 rounded-xl transition-all duration-200 ${
+          isActive ? activeStyle : hoverStyle
+        }`
+      }
     >
-      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-      <polyline points="9 22 9 12 15 12 15 22"></polyline>
-    </svg>
-  ),
-  Book: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-    </svg>
-  ),
-  Heart: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-    </svg>
-  ),
-  Plus: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <circle cx="12" cy="12" r="10"></circle>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
-      <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-  ),
-  Users: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-      <circle cx="9" cy="7" r="4"></circle>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-    </svg>
-  ),
-  Settings: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <circle cx="12" cy="12" r="3"></circle>
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-    </svg>
-  ),
-  LogOut: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-      <polyline points="16 17 21 12 16 7"></polyline>
-      <line x1="21" y1="12" x2="9" y2="12"></line>
-    </svg>
-  ),
-  Menu: ({ className }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <line x1="3" y1="12" x2="21" y2="12"></line>
-      <line x1="3" y1="6" x2="21" y2="6"></line>
-      <line x1="3" y1="18" x2="21" y2="18"></line>
-    </svg>
-  ),
+      <Icon size={22} strokeWidth={2} />
+      {/* Framer motion could be used here for smoother text fade, but generic conditional works */}
+      <span
+        className={`font-medium whitespace-nowrap transition-opacity duration-200 ${
+          open ? "opacity-100 block" : "opacity-0 hidden w-0"
+        }`}
+      >
+        {label}
+      </span>
+    </NavLink>
+  );
 };
 
 const DashBoardLayout = () => {
-  const [open, setOpen] = useState(true); // Default open on desktop is usually better
+  const [open, setOpen] = useState(true);
   const { user, logout } = useAuth();
-  const { role } = useRole();
+  const { role, roleLoading } = useRole();
 
-  // --- Configuration ---
-  const getRoleSpecificLinks = () => {
-    // 1. Common Links (Everyone sees these)
-    const commonLinks = [
-      { to: "/dashboard", icon: Icons.Home, label: "Overview" },
-      { to: "/dashboard/my-lessons", icon: Icons.Book, label: "My Lessons" },
-      { to: "/dashboard/saved-lessons", icon: Icons.Heart, label: "Saved" },
-      { to: "/dashboard/add-lesson", icon: Icons.Plus, label: "Create Lesson" },
-    ];
-
-    // 2. Admin Links
-    const adminLinks = [
-      {
-        to: "/dashboard/users-management",
-        icon: Icons.Users,
-        label: "Manage Users",
-      },
-      {
-        to: "/dashboard/all-lessons",
-        icon: Icons.Book,
-        label: "All Lessons (Admin)",
-      },
-    ];
-
-    if (role === "admin") return [...commonLinks, ...adminLinks];
-    return commonLinks;
-  };
-
-  const navItems = getRoleSpecificLinks();
-
-  // --- Styles ---
-  const navLinkClasses = ({ isActive }) =>
-    `flex items-center gap-4 p-3 rounded-xl transition-all duration-300 group overflow-hidden relative ${
-      isActive
-        ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-200 font-medium"
-        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-    }`;
-
-  // --- Animation Variants ---
   const sidebarVariants = {
-    open: {
-      width: 280,
-      transition: { type: "spring", stiffness: 100, damping: 20 },
-    },
-    closed: {
-      width: 88,
-      transition: { type: "spring", stiffness: 100, damping: 20 },
-    },
+    open: { width: 280 },
+    closed: { width: 88 },
   };
 
-  const textVariants = {
-    open: { opacity: 1, x: 0, display: "block", transition: { duration: 0.3 } },
-    closed: {
-      opacity: 0,
-      x: -10,
-      transition: { duration: 0.2 },
-      transitionEnd: { display: "none" },
-    },
-  };
+  // 3. LOADER LOGIC
+  if (roleLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <PageLoader text="Loading Dashboard..." />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans selection:bg-blue-100">
-      {/* 🔮 Sidebar */}
+    <div className="flex min-h-screen bg-gray-50 font-sans">
+      {/* --- SIDEBAR --- */}
       <motion.aside
-        initial="open"
+        initial={false}
         animate={open ? "open" : "closed"}
         variants={sidebarVariants}
         className="fixed top-0 left-0 z-50 h-screen bg-white border-r border-gray-200 flex flex-col shadow-xl"
       >
-        {/* Header / Logo */}
-        <div className="h-20 flex items-center px-6 border-b border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600 flex-shrink-0">
-              <IoBookSharp className="w-6 h-6" />
-            </div>
-            <motion.span
-              variants={textVariants}
-              className="text-xl font-bold tracking-tight text-gray-800"
+        {/* Logo Section */}
+        <div className="h-20 flex items-center px-6 border-b border-gray-100 gap-3 shrink-0">
+          <div className="bg-blue-600 p-2 rounded-lg text-white shrink-0">
+            <BookOpen size={24} />
+          </div>
+          {open && (
+            <Link
+              to="/"
+              className="text-xl font-bold text-gray-800 whitespace-nowrap"
             >
               Digital Life
-            </motion.span>
-          </div>
+            </Link>
+          )}
         </div>
 
-        {/* User Card (Sidebar) */}
-        <div className="px-4 py-6">
-          <div
-            className={`flex items-center gap-3 p-3 rounded-2xl bg-gray-50 border border-gray-100 ${
-              !open && "justify-center p-2"
-            }`}
-          >
-            <div className="avatar flex-shrink-0">
-              <div className="w-10 h-10 rounded-full ring-2 ring-white shadow-sm overflow-hidden">
-                <img
-                  src={user?.photoURL || "https://i.pravatar.cc/150"}
-                  alt="User"
-                  className="w-full h-full object-cover"
-                />
+        {/* Navigation Section */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-2 scrollbar-hide">
+          {/* USER MENU */}
+          {role !== "admin" &&
+            USER_LINKS.map((link) => (
+              <NavItem key={link.to} {...link} open={open} type="user" />
+            ))}
+
+          {/* ADMIN MENU */}
+          {role === "admin" && (
+            <div className="pt-2">
+              <div
+                className={`text-[10px] font-bold text-red-400 uppercase tracking-widest px-3 mb-2 transition-all ${
+                  !open && "text-center"
+                }`}
+              >
+                {open ? "Admin Control" : "•••"}
+              </div>
+
+              <div className="space-y-2">
+                {ADMIN_LINKS.map((link) => (
+                  <NavItem key={link.to} {...link} open={open} type="admin" />
+                ))}
               </div>
             </div>
-            <motion.div variants={textVariants} className="overflow-hidden">
-              <h4 className="font-semibold text-sm truncate text-gray-700">
-                {user?.displayName || "User"}
-              </h4>
-              <span className="text-xs text-gray-400 uppercase tracking-wider font-medium">
-                {role || "Member"}
-              </span>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-4 space-y-2 scrollbar-thin scrollbar-thumb-gray-200">
-          <p
-            className={`px-4 text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ${
-              !open && "text-center"
-            }`}
-          >
-            {open ? "Menu" : "•"}
-          </p>
-          {navItems.map((item) => (
-            <NavLink key={item.to} to={item.to} className={navLinkClasses}>
-              <item.icon className="w-6 h-6 flex-shrink-0" />
-              <motion.span
-                variants={textVariants}
-                className="whitespace-nowrap"
-              >
-                {item.label}
-              </motion.span>
-            </NavLink>
-          ))}
+          )}
         </nav>
 
-        {/* Footer Actions */}
-        <div className="p-4 border-t border-gray-100 space-y-2">
-          <Link
-            to="/profile"
-            className="flex items-center gap-4 p-3 rounded-xl text-gray-600 hover:bg-gray-100 transition-all"
-          >
-            <Icons.Settings className="w-6 h-6 flex-shrink-0" />
-            <motion.span variants={textVariants}>Settings</motion.span>
-          </Link>
+        {/* Footer / Logout */}
+        <div className="p-4 border-t border-gray-100 shrink-0">
           <button
             onClick={logout}
-            className="w-full flex items-center gap-4 p-3 rounded-xl text-red-500 hover:bg-red-50 transition-all"
+            className="w-full flex items-center gap-4 p-3 rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
           >
-            <Icons.LogOut className="w-6 h-6 flex-shrink-0" />
-            <motion.span variants={textVariants} className="font-medium">
+            <LogOut size={22} />
+            <span
+              className={`font-medium whitespace-nowrap transition-all ${
+                open ? "opacity-100 block" : "opacity-0 hidden"
+              }`}
+            >
               Logout
-            </motion.span>
+            </span>
           </button>
         </div>
       </motion.aside>
 
-      {/* 🚀 Main Content Area */}
+      {/* --- MAIN CONTENT --- */}
       <div
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+        className={`flex-1 flex flex-col transition-all duration-300 ease-in-out ${
           open ? "ml-[280px]" : "ml-[88px]"
         }`}
       >
-        {/* Navbar */}
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200 h-20 px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setOpen(!open)}
-              className="p-2 rounded-full hover:bg-gray-100 text-gray-600"
-            >
-              <Icons.Menu className="w-5 h-5" />
-            </button>
-            <h2 className="text-lg font-bold text-gray-800 hidden sm:block">
-              Dashboard
-            </h2>
-          </div>
+        {/* Header */}
+        <header className="h-20 bg-white/80 backdrop-blur-md border-b sticky top-0 z-40 px-8 flex items-center justify-between">
+          <button
+            onClick={() => setOpen(!open)}
+            className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 transition-colors"
+          >
+            <Menu size={20} />
+          </button>
 
-          <div className="flex items-center gap-4">
-            <div className="dropdown dropdown-end">
-              <div
-                tabIndex={0}
-                role="button"
-                className="btn btn-ghost btn-circle avatar"
-              >
-                <div className="w-10 rounded-full">
-                  <img
-                    src={user?.photoURL || "https://i.pravatar.cc/150"}
-                    alt="User"
-                  />
-                </div>
-              </div>
-              <ul
-                tabIndex={0}
-                className="mt-3 z-[1] p-2 shadow-xl menu menu-sm dropdown-content bg-white rounded-2xl w-56 border border-gray-100 text-gray-700"
-              >
-                <li className="px-2 py-2 mb-2 border-b border-gray-100">
-                  <span className="font-bold">{user?.displayName}</span>
-                </li>
-                <li>
-                  <Link to="/">Home</Link>
-                </li>
-                <li>
-                  <button onClick={logout} className="text-red-500">
-                    Logout
-                  </button>
-                </li>
-              </ul>
+          <div className="flex items-center gap-3">
+            <div className="text-right hidden sm:block">
+              <p className="text-sm font-bold text-gray-800 leading-tight">
+                {user?.displayName || "User"}
+              </p>
+              <p className="text-xs text-gray-400 capitalize font-medium">
+                {role}
+              </p>
             </div>
+            <img
+              src={
+                user?.photoURL || "https://referrer.com/placeholder-avatar.jpg"
+              }
+              className="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover"
+              alt="profile"
+            />
           </div>
         </header>
 
-        {/* Content Outlet */}
-        <main className="p-6 md:p-8 max-w-7xl mx-auto w-full">
+        {/* Content Body */}
+        <main className="p-6 min-h-[calc(100vh-80px)]">
           <Outlet />
         </main>
       </div>

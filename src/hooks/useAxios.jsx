@@ -2,7 +2,8 @@ import axios from "axios";
 import React, { useEffect } from "react";
 import useAuth from "./useAuth";
 const axiosSecure = axios.create({
-  baseURL: "http://localhost:3000",
+  // baseURL: "https://life-lessons-server-side.vercel.app/",
+  baseURL: "http://localhost:3000/",
 });
 const useAxios = () => {
   const { user, logout } = useAuth();

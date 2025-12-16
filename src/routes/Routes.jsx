@@ -1,45 +1,54 @@
-import { createBrowserRouter } from "react-router";
-import Home from "../Pages/Home/Home";
+import { createBrowserRouter, Outlet } from "react-router-dom";
+
+// Layouts
 import MainLayout from "../layouts/MainLayout";
-import Lessons from "../pages/Lessons/Lessons";
+import DashBoardLayout from "../layouts/DashboardLayout";
+
+// Auth & Protection
 import Login from "../pages/Auth/Login";
 import Register from "../pages/Auth/Register";
-import PaymentCancelled from "../pages/Dashboard/Payment/PaymentCancelled";
-import PaymentSuccess from "../pages/Dashboard/Payment/PaymentSuccess";
 import PrivateRoute from "./PrivateRoute";
-import DashBoardLayout from "../layouts/DashboardLayout";
+import AdminRoute from "./AdminRoute";
+
+// Public Pages
+import Home from "../pages/Home/Home";
+import Lessons from "../pages/Lessons/Lessons";
 import LessonDetails from "../pages/Lessons/LessonDetails";
-import AddLesson from "../pages/Dashboard/Lessons/AddLesson";
 import UserProfile from "../pages/Lessons/UserProfile";
-import DashboardHome from "../pages/Dashboard/DashboardHome";
 import PremiumPlans from "../pages/Payments/PremiumPlans";
+
+// Payment Pages
+import PaymentSuccess from "../pages/Dashboard/Payment/PaymentSuccess";
+import PaymentCancelled from "../pages/Dashboard/Payment/PaymentCancelled";
+
+// Dashboard - User Pages
+import DashboardHome from "../pages/Dashboard/DashboardHome";
+import AddLesson from "../pages/Dashboard/Lessons/AddLesson";
 import MyLessons from "../pages/Dashboard/Lessons/MyLessons";
 import SavedLessons from "../pages/Dashboard/Lessons/SavedLessons";
 import Profile from "../pages/Dashboard/Profile/Profile";
+
+// Dashboard - Admin Pages
+import AdminDashboard from "../pages/Dashboard/Admin/AdminDashboard";
+import ManageUsers from "../pages/Dashboard/Admin/ManageUsers";
+import DashboardEntry from "../components/DashboardEntry";
+import ManageLessons from "../pages/Dashboard/Admin/ManageLessons";
+// NOTE: Ensure these files exist at these paths, or update the paths
+// import ManageUsers from "../pages/Dashboard/Admin/ManageUsers";
+// import ManageLessons from "../pages/Dashboard/Admin/ManageLessons";
+// import ReportedLessons from "../pages/Dashboard/Admin/ReportedLessons";
 
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
     children: [
-      { path: "/", element: <Home /> },
-      {
-        path: "/lessons",
-        element: <Lessons />,
-      },
-      {
-        path: "/lessons/:id",
-        element: <LessonDetails />,
-      },
-      { path: "/profile/:email", element: <UserProfile /> },
-      {
-        path: "/login",
-        element: <Login />,
-      },
-      {
-        path: "/register",
-        element: <Register />,
-      },
+      { index: true, element: <Home /> },
+      { path: "lessons", element: <Lessons /> },
+      { path: "lessons/:id", element: <LessonDetails /> },
+      { path: "profile/:email", element: <UserProfile /> },
+      { path: "login", element: <Login /> },
+      { path: "register", element: <Register /> },
       { path: "payment-success", element: <PaymentSuccess /> },
       { path: "payment-cancel", element: <PaymentCancelled /> },
       { path: "pricing/upgrade", element: <PremiumPlans /> },
@@ -53,12 +62,36 @@ export const router = createBrowserRouter([
       </PrivateRoute>
     ),
     children: [
-      { index: true, Component: DashboardHome },
-
+      { index: true, element: <DashboardEntry /> },
       { path: "add-lesson", element: <AddLesson /> },
       { path: "my-lessons", element: <MyLessons /> },
       { path: "saved-lessons", element: <SavedLessons /> },
       { path: "profile", element: <Profile /> },
+      // admin
+      {
+        path: "admin",
+        element: (
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "admin/manage-users",
+        element: (
+          <AdminRoute>
+            <ManageUsers />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "admin/manage-lessons",
+        element: (
+          <AdminRoute>
+            <ManageLessons />
+          </AdminRoute>
+        ),
+      },
     ],
   },
 ]);
