@@ -21,7 +21,7 @@ const AdminRoute = ({ children }) => {
   // 4. Not Logged In → Redirect to Login
   if (!user) {
     // Pass the current location in state so you can redirect them back after login
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // 5. Logged In but NOT Admin → Show Custom Forbidden Component

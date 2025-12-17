@@ -33,10 +33,11 @@ import AdminDashboard from "../pages/Dashboard/Admin/AdminDashboard";
 import ManageUsers from "../pages/Dashboard/Admin/ManageUsers";
 import DashboardEntry from "../components/DashboardEntry";
 import ManageLessons from "../pages/Dashboard/Admin/ManageLessons";
+import ReportedLessons from "../pages/Dashboard/Admin/ReportedLessons";
+import AdminProfile from "../pages/Dashboard/Admin/AdminProfile";
 // NOTE: Ensure these files exist at these paths, or update the paths
 // import ManageUsers from "../pages/Dashboard/Admin/ManageUsers";
 // import ManageLessons from "../pages/Dashboard/Admin/ManageLessons";
-// import ReportedLessons from "../pages/Dashboard/Admin/ReportedLessons";
 
 export const router = createBrowserRouter([
   {
@@ -89,6 +90,22 @@ export const router = createBrowserRouter([
         element: (
           <AdminRoute>
             <ManageLessons />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "admin/reported-lessons",
+        element: (
+          <AdminRoute>
+            <ReportedLessons />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "admin/profile",
+        element: (
+          <AdminRoute>
+            <AdminProfile />
           </AdminRoute>
         ),
       },

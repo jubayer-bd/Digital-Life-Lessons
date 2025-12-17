@@ -1,9 +1,14 @@
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import useAxios from "../../hooks/useAxios";
 
 const ReportModal = ({ isOpen, onClose, lessonId, user }) => {
-  const [reason, setReason] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reason, setReason] = useState("");
+  const axiosSecure = useAxios();
+  useEffect(() => {
+    if (!isOpen) setReason("");
+  }, [isOpen]);
 
   const reportReasons = [
     "Inappropriate Content",
@@ -11,74 +16,103 @@ const ReportModal = ({ isOpen, onClose, lessonId, user }) => {
     "Misleading or False Information",
     "Spam or Promotional Content",
     "Sensitive or Disturbing Content",
-    "Other"
+    "Other",
   ];
 
-  const handleSubmit = async (e) => {
+  // 🔹 TanStack mutation
+  const { mutate, isPending } = useMutation({
+    mutationFn: async () => {
+      return axiosSecure.post(`/lessons/${lessonId}/report`, {
+        reason,
+      });
+    },
+    onSuccess: () => {
+      alert("✅ Report submitted successfully. Thank you!");
+      onClose();
+    },
+    onError: () => {
+      alert("❌ Failed to submit report. Please try again.");
+    },
+  });
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if(!user) return alert("You must be logged in to report.");
-    
-    setIsSubmitting(true);
 
-    const reportData = {
-      lessonId,
-      reporterUserId: user.id,
-      reporterEmail: user.email,
-      reason,
-      timestamp: new Date().toISOString()
-    };
-
-    try {
-        // Mock DB Call
-        console.log("Submitting Report to DB:", reportData); 
-        // await db.collection('lessonsReports').add(reportData);
-        
-        alert("Report submitted successfully. We will review this shortly.");
-        onClose();
-    } catch (error) {
-        alert("Failed to submit report.");
-    } finally {
-        setIsSubmitting(false);
-        setReason('');
+    if (!user) {
+      alert("You must be logged in to report.");
+      return;
     }
+
+    if (!reason) {
+      alert("Please select a reason.");
+      return;
+    }
+
+    mutate();
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
-            <X size={24} />
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative animate-in fade-in zoom-in">
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+        >
+          <X size={22} />
         </button>
 
-        <h2 className="text-xl font-bold mb-4 text-gray-900">Report Lesson</h2>
-        <p className="text-sm text-gray-600 mb-4">Please select a reason for reporting this content. Reports are anonymous.</p>
+        {/* Header */}
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Report Lesson
+        </h2>
+        <p className="text-sm text-gray-600 mb-5">
+          Help us keep the community safe. Reports are reviewed by admins.
+        </p>
 
-        <form onSubmit={handleSubmit}>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Reason</label>
-            <select 
-                className="w-full border border-gray-300 rounded-lg p-2.5 mb-6 focus:ring-2 focus:ring-blue-500 outline-none"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                required
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select a reason
+            </label>
+
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              required
             >
-                <option value="">Select a reason</option>
-                {reportReasons.map((r, index) => (
-                    <option key={index} value={r}>{r}</option>
-                ))}
+              <option value="">Choose a reason</option>
+              {reportReasons.map((r, index) => (
+                <option key={index} value={r}>
+                  {r}
+                </option>
+              ))}
             </select>
+          </div>
 
-            <div className="flex justify-end gap-3">
-                <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-                <button 
-                    type="submit" 
-                    disabled={isSubmitting}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                >
-                    {isSubmitting ? 'Submitting...' : 'Submit Report'}
-                </button>
-            </div>
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isPending}
+              className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-100"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={isPending}
+              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isPending ? "Submitting..." : "Submit Report"}
+            </button>
+          </div>
         </form>
       </div>
     </div>

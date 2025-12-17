@@ -6,29 +6,28 @@ const axiosSecure = axios.create({
   baseURL: "http://localhost:3000/",
 });
 const useAxios = () => {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
+
   useEffect(() => {
     // intercept requests
     const requestInterceptor = axiosSecure.interceptors.request.use(
       (config) => {
-        config.headers.Authorization = `Bearer ${user?.accessToken}`;
-        // console.log(config);
-
+        if (!loading && user?.accessToken) {
+          config.headers.Authorization = `Bearer ${user.accessToken}`;
+        }
         return config;
       }
     );
+
     // intercept responses
     const resInterceptor = axiosSecure.interceptors.response.use(
-      (response) => {
-        return response;
-      },
+      (response) => response,
       (error) => {
-        console.log(error);
-        const statusCode = error.status;
-        if (statusCode === 401 || statusCode === 403) {
-          // handle unauthorized access
+        const statusCode = error.response?.status;
+
+        if (!loading && (statusCode === 401 || statusCode === 403)) {
           logout().then(() => {
-            window.location.href = "/auth/login";
+            window.location.href = "/login";
           });
         }
         return Promise.reject(error);
