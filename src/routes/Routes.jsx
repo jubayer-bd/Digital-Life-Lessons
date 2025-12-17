@@ -15,6 +15,7 @@ import Home from "../pages/Home/Home";
 import Lessons from "../pages/Lessons/Lessons";
 import LessonDetails from "../pages/Lessons/LessonDetails";
 import PremiumPlans from "../pages/Payments/PremiumPlans";
+import AuthorProfile from "../pages/Lessons/AuthorProfile";
 
 // Payment Pages
 import PaymentSuccess from "../pages/Dashboard/Payment/PaymentSuccess";
@@ -36,10 +37,6 @@ import ReportedLessons from "../pages/Dashboard/Admin/ReportedLessons";
 import AdminProfile from "../pages/Dashboard/Admin/AdminProfile";
 import About from "../pages/About/About";
 import Contact from "../pages/Contact/Contact";
-import AuthorProfile from "../pages/Lessons/AuthorProfile";
-// NOTE: Ensure these files exist at these paths, or update the paths
-// import ManageUsers from "../pages/Dashboard/Admin/ManageUsers";
-// import ManageLessons from "../pages/Dashboard/Admin/ManageLessons";
 
 export const router = createBrowserRouter([
   {
@@ -48,7 +45,14 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: "lessons", element: <Lessons /> },
-      { path: "lessons/:id", element: <LessonDetails /> },
+      {
+        path: "lessons/:id",
+        element: (
+          <PrivateRoute>
+            <LessonDetails />
+          </PrivateRoute>
+        ),
+      },
       { path: "profile/:email", element: <AuthorProfile /> },
       { path: "about", element: <About /> },
       { path: "contact", element: <Contact /> },
@@ -58,7 +62,14 @@ export const router = createBrowserRouter([
       // payment
       { path: "payment-success", element: <PaymentSuccess /> },
       { path: "payment-cancel", element: <PaymentCancelled /> },
-      { path: "pricing/upgrade", element: <PremiumPlans /> },
+      {
+        path: "pricing/upgrade",
+        element: (
+          <PrivateRoute>
+            <PremiumPlans />
+          </PrivateRoute>
+        ),
+      },
     ],
   },
   {
