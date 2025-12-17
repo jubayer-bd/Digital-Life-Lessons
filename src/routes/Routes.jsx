@@ -35,6 +35,8 @@ import DashboardEntry from "../components/DashboardEntry";
 import ManageLessons from "../pages/Dashboard/Admin/ManageLessons";
 import ReportedLessons from "../pages/Dashboard/Admin/ReportedLessons";
 import AdminProfile from "../pages/Dashboard/Admin/AdminProfile";
+import About from "../pages/About/About";
+import Contact from "../pages/Contact/Contact";
 // NOTE: Ensure these files exist at these paths, or update the paths
 // import ManageUsers from "../pages/Dashboard/Admin/ManageUsers";
 // import ManageLessons from "../pages/Dashboard/Admin/ManageLessons";
@@ -48,8 +50,12 @@ export const router = createBrowserRouter([
       { path: "lessons", element: <Lessons /> },
       { path: "lessons/:id", element: <LessonDetails /> },
       { path: "profile/:email", element: <UserProfile /> },
+      { path: "about", element: <About /> },
+      { path: "contact", element: <Contact /> },
+      // auth
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
+      // payment
       { path: "payment-success", element: <PaymentSuccess /> },
       { path: "payment-cancel", element: <PaymentCancelled /> },
       { path: "pricing/upgrade", element: <PremiumPlans /> },

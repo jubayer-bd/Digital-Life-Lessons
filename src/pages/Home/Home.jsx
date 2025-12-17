@@ -10,6 +10,7 @@ const Home = () => {
       <FeaturedLessons />
       <Categories />
       <WhyChooseUs />
+      
     </div>
   );
 };
