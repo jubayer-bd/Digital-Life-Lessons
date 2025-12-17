@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, AlertTriangle } from "lucide-react"; // Added Alert icon
 import { useMutation } from "@tanstack/react-query";
 import useAxios from "../../hooks/useAxios";
+import toast from "react-hot-toast"; // Use toast instead of alert
 
 const ReportModal = ({ isOpen, onClose, lessonId, user }) => {
   const [reason, setReason] = useState("");
   const axiosSecure = useAxios();
+
   useEffect(() => {
     if (!isOpen) setReason("");
   }, [isOpen]);
@@ -19,96 +21,79 @@ const ReportModal = ({ isOpen, onClose, lessonId, user }) => {
     "Other",
   ];
 
-  // 🔹 TanStack mutation
   const { mutate, isPending } = useMutation({
     mutationFn: async () => {
-      return axiosSecure.post(`/lessons/${lessonId}/report`, {
-        reason,
-      });
+      return axiosSecure.post(`/lessons/${lessonId}/report`, { reason });
     },
     onSuccess: () => {
-      alert("✅ Report submitted successfully. Thank you!");
+      toast.success("Report submitted. Thank you for helping us.");
       onClose();
     },
     onError: () => {
-      alert("❌ Failed to submit report. Please try again.");
+      toast.error("Failed to submit report.");
     },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    if (!user) {
-      alert("You must be logged in to report.");
-      return;
-    }
-
-    if (!reason) {
-      alert("Please select a reason.");
-      return;
-    }
-
+    if (!user) return toast.error("Login required to report.");
+    if (!reason) return toast.error("Please select a reason.");
     mutate();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative animate-in fade-in zoom-in">
-        {/* Close */}
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative scale-100 transform transition-all">
+        
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1"
         >
-          <X size={22} />
+          <X size={20} />
         </button>
 
-        {/* Header */}
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Report Lesson
-        </h2>
-        <p className="text-sm text-gray-600 mb-5">
-          Help us keep the community safe. Reports are reviewed by admins.
-        </p>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-3 bg-red-50 text-red-500 rounded-full">
+            <AlertTriangle size={24} />
+          </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Select a reason
-            </label>
+            <h2 className="text-xl font-bold text-gray-900">Report Lesson</h2>
+            <p className="text-sm text-gray-500">Flag content for admin review</p>
+          </div>
+        </div>
 
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Why are you reporting this?
+            </label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-red-200 focus:border-red-500 outline-none transition bg-white"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               required
             >
-              <option value="">Choose a reason</option>
+              <option value="">Select a reason</option>
               {reportReasons.map((r, index) => (
-                <option key={index} value={r}>
-                  {r}
-                </option>
+                <option key={index} value={r}>{r}</option>
               ))}
             </select>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              disabled={isPending}
-              className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-100"
+              className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 font-medium hover:bg-gray-50 transition"
             >
               Cancel
             </button>
-
             <button
               type="submit"
               disabled={isPending}
-              className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition disabled:opacity-70"
             >
               {isPending ? "Submitting..." : "Submit Report"}
             </button>

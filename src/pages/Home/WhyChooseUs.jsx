@@ -25,8 +25,7 @@ const WhyChooseUs = () => {
             Clean UI, high-quality UX, and optimized performance for a smooth experience.
           </p>
         </div>
-
-      </div>
+      </div>      
     </div>
   );
 };

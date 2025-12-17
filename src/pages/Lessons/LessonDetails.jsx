@@ -11,6 +11,8 @@ import {
   Calendar,
   X,
   Copy,
+  ChevronRight,
+  Lock,
 } from "lucide-react";
 import {
   FacebookShareButton,
@@ -22,19 +24,23 @@ import {
 } from "react-share";
 import ReportModal from "./ReportModal";
 import CommentSection from "./CommentSection";
+import RelatedLessons from "./RelatedLessons"; // Make sure this is imported
 import { useQuery } from "@tanstack/react-query";
 import useAxios from "../../hooks/useAxios";
 import useAuth from "../../hooks/useAuth";
-import useIsPremium from "../../hooks/useIsPremimum";
 import toast from "react-hot-toast";
 import PageLoader from "../../components/PageLoader";
+import useIsPremium from "../../hooks/useIsPremimum";
 
 const LessonDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const axiosSecure = useAxios();
   const { user } = useAuth();
-  const { isPremium } = useIsPremium();
+
+  // Assuming useIsPremium returns { isPremium, isPending/isLoading }
+  const { isPremium, isPending: isPremiumLoading } = useIsPremium();
+
   const shareUrl = window.location.href;
 
   // Fetch lesson data
@@ -58,6 +64,8 @@ const LessonDetails = () => {
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+
+  // Static random view count (persists for the session)
   const [viewCount] = useState(Math.floor(Math.random() * 5000) + 500);
 
   // Sync state when lesson loads
@@ -65,7 +73,6 @@ const LessonDetails = () => {
     if (lesson) {
       setLikesCount(lesson.likesCount || 0);
       setFavoritesCount(lesson.favoritesCount || 0);
-
       if (user) {
         setIsLiked(lesson.likes?.includes(user.email) || false);
         setIsFavorited(lesson.favorites?.includes(user.email) || false);
@@ -73,17 +80,27 @@ const LessonDetails = () => {
     }
   }, [lesson, user]);
 
-  if (isLoading) return <PageLoader text="loading lessons ....." />;
-  if (isError)
+  if (isLoading || isPremiumLoading)
+    return <PageLoader text="Loading content..." />;
+
+  if (isError || !lesson) {
     return (
-      <div className="text-center py-20 text-red-500">
-        Failed to load lesson content.
+      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
+        <h2 className="text-2xl font-bold text-gray-800">Lesson not found</h2>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-4 text-blue-600 hover:underline"
+        >
+          Go Back
+        </button>
       </div>
     );
-  if (!lesson) return null;
+  }
 
-  // Added checking for undefined/null on isPremium
-  const shouldBlockContent = lesson.accessLevel === "premium" && !isPremium;
+  // Content Blocking Logic
+  const isPremiumContent = lesson.accessLevel === "premium";
+  const hasAccess = isPremium || user?.email === lesson?.authorEmail; // Author can always see
+  const shouldBlockContent = isPremiumContent && !hasAccess;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl);
@@ -91,248 +108,279 @@ const LessonDetails = () => {
     setShareModalOpen(false);
   };
 
-  // LIKE HANDLER
   const handleLike = async () => {
     if (!user) return toast.error("Please login to like.");
-
     const prevState = isLiked;
     setIsLiked(!prevState);
     setLikesCount((prev) => (!prevState ? prev + 1 : prev - 1));
 
     try {
       await axiosSecure.patch(`/lessons/${id}/like`);
-      refetch();
+      refetch(); // Background sync
     } catch {
       setIsLiked(prevState);
       setLikesCount((prev) => (prevState ? prev + 1 : prev - 1));
-      toast.error("Something went wrong");
+      toast.error("Failed to update like");
     }
   };
 
-  // --- FIXED FAVORITE HANDLER ---
   const handleFavorite = async () => {
     if (!user) return toast.error("Please login to save.");
-
-    // 1. Snapshot previous state (for rollback)
     const prevIsFavorited = isFavorited;
-    const prevCount = favoritesCount;
-
-    // 2. Optimistic Update (Update UI immediately)
-    const newState = !prevIsFavorited;
-    setIsFavorited(newState);
-    setFavoritesCount((prev) => (newState ? prev + 1 : prev - 1));
+    setIsFavorited(!prevIsFavorited);
+    setFavoritesCount((prev) => (!prevIsFavorited ? prev + 1 : prev - 1));
 
     try {
-      // 3. API Call
       const { data } = await axiosSecure.patch(`/lessons/${id}/favorite`);
-
       if (!data.success) throw new Error("Server failed");
-
       toast.success(data.message);
-
-      // 4. Refetch to ensure data consistency with server
-      // Note: We do NOT manually update state here again, as
-      // the optimistic update handled the visual change.
-      // Refetch will trigger the useEffect above to ensure strict sync.
       refetch();
     } catch (error) {
-      // 5. Rollback on Error
-      console.error(error);
       setIsFavorited(prevIsFavorited);
-      setFavoritesCount(prevCount);
+      setFavoritesCount((prev) => (prevIsFavorited ? prev + 1 : prev - 1));
       toast.error("Failed to save favorite");
     }
   };
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 bg-white min-h-screen">
+      {/* Breadcrumb / Navigation */}
+      <nav className="flex items-center text-sm text-gray-500 mb-6">
+        <span
+          className="hover:text-gray-900 cursor-pointer"
+          onClick={() => navigate("/lessons")}
+        >
+          Lessons
+        </span>
+        <ChevronRight size={16} className="mx-2" />
+        <span className="text-gray-900 font-medium truncate">
+          {lesson.title}
+        </span>
+      </nav>
+
       {/* HEADER */}
-      <header className="mb-8">
-        <div className="flex gap-2 mb-4">
-          <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full uppercase">
+      <header className="mb-10">
+        <div className="flex flex-wrap gap-2 mb-4">
+          <span className="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border border-blue-100">
             {lesson.category}
           </span>
-          <span className="bg-purple-100 text-purple-800 text-xs font-bold px-2.5 py-1 rounded-full uppercase">
+          <span className="bg-purple-50 text-purple-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide border border-purple-100">
             {lesson.emotionalTone}
           </span>
         </div>
 
-        <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">
+        <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
           {lesson.title}
         </h1>
 
-        <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 mb-6 border-b pb-6">
+        <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 mb-8 pb-8 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <Calendar size={18} />
-            {new Date(lesson.createdAt).toLocaleDateString()}
+            <Calendar size={18} className="text-gray-400" />
+            {new Date(lesson.createdAt).toLocaleDateString(undefined, {
+              dateStyle: "medium",
+            })}
           </div>
           <div className="flex items-center gap-2">
-            <Clock size={18} /> 5 min read
+            <Clock size={18} className="text-gray-400" /> 5 min read
           </div>
           <div className="flex items-center gap-2">
-            <Eye size={18} /> {viewCount.toLocaleString()} Views
+            <Eye size={18} className="text-gray-400" />{" "}
+            {viewCount.toLocaleString()} Views
           </div>
         </div>
 
         {lesson.image && (
-          <img
-            src={lesson.image}
-            alt={lesson.title}
-            className="w-full h-64 md:h-[450px] object-cover rounded-2xl shadow-lg mb-8"
-          />
+          <div className="rounded-2xl overflow-hidden shadow-lg mb-10">
+            <img
+              src={lesson.image}
+              alt={lesson.title}
+              className="w-full h-64 md:h-[450px] object-cover hover:scale-105 transition duration-700"
+            />
+          </div>
         )}
       </header>
 
       {/* CONTENT & PREMIUM LOCK */}
-      <div className="relative mb-12">
+      <div className="relative mb-16">
         {shouldBlockContent ? (
           <div className="relative">
-            <div className="prose prose-lg text-gray-600 blur-sm select-none h-48 overflow-hidden">
-              <p>{lesson.description.substring(0, 200)}...</p>
+            {/* Blurred Preview */}
+            <div className="prose prose-lg max-w-none text-gray-400 blur-[6px] select-none h-64 overflow-hidden opacity-50">
+              {/* Show a chunk of real text to make the blur look authentic */}
+              <p>{lesson.description.substring(0, 500)}...</p>
+              <p>{lesson.description.substring(0, 500)}...</p>
             </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm rounded-lg border border-gray-100 z-10">
-              <Star className="w-12 h-12 text-yellow-500 mb-2 fill-current" />
-              <h3 className="text-2xl font-bold mb-2">Premium Content</h3>
-              <p className="text-gray-600 mb-6">
-                Upgrade your plan to unlock this lesson.
-              </p>
-              <button
-                className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transition"
-                onClick={() => navigate("/pricing")}
-              >
-                Upgrade Now
-              </button>
+
+            {/* Lock Overlay */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
+              <div className="bg-white/90 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-white/50 text-center max-w-md mx-auto">
+                <div className="bg-amber-100 p-4 rounded-full inline-flex mb-4">
+                  <Lock className="w-8 h-8 text-amber-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  Premium Content
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Unlock this lesson and get full access to all our exclusive
+                  content.
+                </p>
+                <button
+                  className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:shadow-xl hover:-translate-y-1 transition transform"
+                  onClick={() => navigate("/pricing")}
+                >
+                  Upgrade to Premium
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <article className="prose prose-lg max-w-none text-gray-800">
+          <article className="prose prose-lg prose-slate max-w-none text-gray-800 leading-relaxed">
             <p className="whitespace-pre-line">{lesson.description}</p>
           </article>
         )}
       </div>
 
-      {/* AUTHOR & INTERACTIONS */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-gray-50 rounded-2xl mb-12">
-        <div className="flex items-center gap-4">
+      {/* AUTHOR & INTERACTIONS BAR */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-white border border-gray-100 shadow-sm rounded-2xl mb-16">
+        {/* Author */}
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <img
             src={lesson.authorImage || "https://i.ibb.co/t2Wz12d/user1.jpg"}
             alt={lesson.authorName}
-            className="w-14 h-14 rounded-full border-2 border-white shadow-sm"
+            className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-100"
           />
-          <div>
-            <h4 className="font-bold text-gray-900">{lesson.authorName}</h4>
-            <p className="text-sm text-gray-500">Author</p>
+          <div className="flex flex-col">
+            <span className="text-xs text-gray-500 uppercase font-semibold tracking-wider">
+              Written by
+            </span>
+            <span className="font-bold text-gray-900 text-lg leading-none">
+              {lesson.authorName}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleLike}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full transition ${
-              isLiked
-                ? "bg-red-50 text-red-600 font-semibold"
-                : "bg-white border hover:bg-gray-100"
-            }`}
-          >
-            <Heart size={20} className={isLiked ? "fill-current" : ""} />
-            {likesCount}
-          </button>
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition border ${
+                isLiked
+                  ? "bg-red-50 border-red-200 text-red-600"
+                  : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
+              }`}
+            >
+              <Heart size={20} className={isLiked ? "fill-current" : ""} />
+              <span className="font-medium">{likesCount}</span>
+            </button>
 
-          <button
-            onClick={handleFavorite}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full transition ${
-              isFavorited
-                ? "bg-yellow-50 text-yellow-600 font-semibold"
-                : "bg-white border hover:bg-gray-100"
-            }`}
-          >
-            {isFavorited ? (
-              <Star size={20} className="fill-current" />
-            ) : (
-              <StarOff size={20} />
-            )}
-            {favoritesCount}
-          </button>
+            <button
+              onClick={handleFavorite}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition border ${
+                isFavorited
+                  ? "bg-amber-50 border-amber-200 text-amber-600"
+                  : "bg-white border-gray-200 hover:bg-gray-50 text-gray-700"
+              }`}
+            >
+              {isFavorited ? (
+                <Star size={20} className="fill-current" />
+              ) : (
+                <StarOff size={20} />
+              )}
+              <span className="font-medium">{favoritesCount}</span>
+            </button>
+          </div>
 
-          <button
-            onClick={() => setShareModalOpen(true)}
-            className="p-2 rounded-full bg-white border hover:bg-gray-100 text-gray-600"
-          >
-            <Share2 size={20} />
-          </button>
+          <div className="w-px h-8 bg-gray-200 mx-2 hidden md:block"></div>
 
-          <button
-            onClick={() => setIsReportModalOpen(true)}
-            className="p-2 rounded-full bg-white border hover:bg-red-50 hover:text-red-500 text-gray-400"
-          >
-            <Flag size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShareModalOpen(true)}
+              className="p-2.5 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 transition"
+              title="Share"
+            >
+              <Share2 size={20} />
+            </button>
+            <button
+              onClick={() => setIsReportModalOpen(true)}
+              className="p-2.5 rounded-full bg-white border border-gray-200 hover:bg-red-50 hover:text-red-500 text-gray-400 transition"
+              title="Report"
+            >
+              <Flag size={20} />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* COMMENTS */}
-      <div className="mb-16">
-        <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
-          Comments
-        </h3>
+      <div className="mb-16 border-t pt-10">
+        <h3 className="text-2xl font-bold mb-6 text-gray-900">Discussion</h3>
         <CommentSection lessonId={lesson._id} user={user} />
       </div>
 
       {/* RELATED LESSONS */}
-      {/* Uncommented and passed logic to ensure it doesn't break if props are missing */}
-      <div>
-        <h3 className="text-2xl font-bold mb-6">More like this</h3>
-        {/* <RelatedLessons
-           currentCategory={lesson?.category}
-           currentTone={lesson?.emotionalTone}
-           currentId={lesson?._id}
-         /> */}
+      <div className="mb-10 border-t pt-10">
+        <h3 className="text-2xl font-bold mb-8 text-gray-900">
+          You might also like
+        </h3>
+        <RelatedLessons
+          currentCategory={lesson?.category}
+          currentTone={lesson?.emotionalTone}
+          currentId={lesson?._id}
+        />
       </div>
 
       {/* SHARE MODAL */}
       {shareModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm relative">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm relative shadow-2xl scale-100">
             <button
               onClick={() => setShareModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 rounded-full p-1"
             >
               <X size={20} />
             </button>
-
-            <h3 className="text-xl font-bold mb-4">Share Lesson</h3>
-
-            <div className="flex justify-center gap-6 mb-6">
-              <FacebookShareButton url={shareUrl}>
-                <FacebookIcon size={48} round />
+            <h3 className="text-xl font-bold mb-6 text-center">
+              Share this lesson
+            </h3>
+            <div className="flex justify-center gap-6 mb-8">
+              <FacebookShareButton
+                url={shareUrl}
+                className="hover:scale-110 transition"
+              >
+                <FacebookIcon size={50} round />
               </FacebookShareButton>
-              <TwitterShareButton url={shareUrl}>
-                <TwitterIcon size={48} round />
+              <TwitterShareButton
+                url={shareUrl}
+                className="hover:scale-110 transition"
+              >
+                <TwitterIcon size={50} round />
               </TwitterShareButton>
-              <WhatsappShareButton url={shareUrl}>
-                <WhatsappIcon size={48} round />
+              <WhatsappShareButton
+                url={shareUrl}
+                className="hover:scale-110 transition"
+              >
+                <WhatsappIcon size={50} round />
               </WhatsappShareButton>
             </div>
-
-            <div className="flex items-center gap-2 border p-2 rounded-lg bg-gray-50">
+            <div className="flex items-center gap-2 border border-gray-200 p-2 rounded-xl bg-gray-50">
               <input
                 type="text"
                 readOnly
                 value={shareUrl}
-                className="flex-1 bg-transparent text-sm outline-none text-gray-500"
+                className="flex-1 bg-transparent text-sm outline-none text-gray-600 px-2"
               />
               <button
                 onClick={handleCopyLink}
-                className="p-2 hover:bg-gray-200 rounded-md"
+                className="p-2 bg-white border shadow-sm rounded-lg hover:bg-gray-50 text-gray-700"
               >
-                <Copy size={16} />
+                <Copy size={18} />
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* REPORT MODAL */}
       <ReportModal
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}

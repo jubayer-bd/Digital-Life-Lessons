@@ -1,36 +1,30 @@
-// CommentSection.jsx
 import React, { useState, useEffect } from "react";
-import { Send } from "lucide-react";
+import { Send, MessageCircle } from "lucide-react";
 import useAxios from "../../hooks/useAxios";
 
 const CommentCard = ({ comment }) => {
-  const formattedDate = new Date(
-    typeof comment.createdAt === "number"
-      ? comment.createdAt
-      : comment.createdAt
-  ).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  // Safe date parsing
+  const dateObj = new Date(comment.createdAt);
+  const isValidDate = !isNaN(dateObj);
+  const formattedDate = isValidDate 
+    ? dateObj.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+    : "Just now";
 
   return (
-    <div className="flex space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-100">
+    <div className="flex gap-4 p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
       <img
-        className="h-10 w-10 rounded-full object-cover border-2 shadow-sm"
-        src={comment.userImg || `https://i.pravatar.cc/150?u=${comment.userId}`}
+        className="h-10 w-10 rounded-full object-cover border border-gray-200 flex-shrink-0"
+        src={comment.userImg || `https://ui-avatars.com/api/?name=${comment.userName}&background=random`}
         alt={comment.userName}
       />
       <div className="flex-1">
-        <div className="flex items-center justify-between">
-          <p className="font-semibold text-gray-900">
-            {comment.userName || "Anonymous User"}
-          </p>
-          <span className="text-xs text-gray-500">{formattedDate}</span>
+        <div className="flex items-center justify-between mb-1">
+          <h5 className="font-bold text-gray-900 text-sm">
+            {comment.userName || "Anonymous"}
+          </h5>
+          <span className="text-xs text-gray-400">{formattedDate}</span>
         </div>
-        <p className="text-gray-700 mt-1 whitespace-pre-line">
+        <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
           {comment.content}
         </p>
       </div>
@@ -40,13 +34,11 @@ const CommentCard = ({ comment }) => {
 
 const CommentSection = ({ lessonId, user }) => {
   const axiosSecure = useAxios();
-
   const [comments, setComments] = useState([]);
   const [newCommentContent, setNewCommentContent] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isPosting, setIsPosting] = useState(false);
 
-  // Fetch comments
   const fetchComments = async () => {
     try {
       setIsLoading(true);
@@ -59,30 +51,21 @@ const CommentSection = ({ lessonId, user }) => {
     }
   };
 
-  // Post comment
   const handlePostComment = async (e) => {
     e.preventDefault();
     if (!user || !newCommentContent.trim()) return;
 
     setIsPosting(true);
-
     try {
       const res = await axiosSecure.post(
         `/lessons/${lessonId}/comments`,
         { content: newCommentContent },
-        {
-          headers: {
-            email: user?.email, // your existing auth pattern
-          },
-        }
+        { headers: { email: user?.email } }
       );
-
-      // Update UI instantly
       setComments([res.data, ...comments]);
       setNewCommentContent("");
     } catch (err) {
       console.error("Error posting comment:", err);
-      alert("Failed to post comment.");
     } finally {
       setIsPosting(false);
     }
@@ -93,42 +76,38 @@ const CommentSection = ({ lessonId, user }) => {
   }, [lessonId]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-3xl">
       {/* Input Box */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+      <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
         {user ? (
-          <form onSubmit={handlePostComment} className="space-y-4">
+          <form onSubmit={handlePostComment} className="relative">
             <textarea
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary resize-y"
+              className="w-full p-4 pr-12 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none transition shadow-sm text-gray-700"
               rows="3"
-              placeholder={`Post a comment as ${user.displayName}...`}
+              placeholder="Share your thoughts or insights..."
               value={newCommentContent}
               onChange={(e) => setNewCommentContent(e.target.value)}
               disabled={isPosting}
               required
             ></textarea>
-
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="flex items-center gap-2 bg-primary text-white font-semibold py-2 px-6 rounded-full hover:bg-blue-700 transition disabled:opacity-50"
-                disabled={isPosting || newCommentContent.trim().length === 0}
-              >
-                {isPosting ? "Posting..." : "Post Comment"} <Send size={18} />
-              </button>
-            </div>
+            
+            <button
+              type="submit"
+              disabled={isPosting || !newCommentContent.trim()}
+              className="absolute bottom-3 right-3 p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md"
+            >
+              {isPosting ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                <Send size={18} />
+              )}
+            </button>
           </form>
         ) : (
-          <div className="text-center p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-blue-800 font-medium">
-              Please{" "}
-              <a
-                href="/login"
-                className="text-blue-600 hover:underline font-bold"
-              >
-                log in
-              </a>{" "}
-              to post a comment.
+          <div className="text-center py-6">
+            <MessageCircle className="mx-auto text-gray-300 w-10 h-10 mb-2" />
+            <p className="text-gray-600">
+              Please <a href="/login" className="text-blue-600 font-bold hover:underline">log in</a> to join the conversation.
             </p>
           </div>
         )}
@@ -136,21 +115,17 @@ const CommentSection = ({ lessonId, user }) => {
 
       {/* Comment List */}
       <div className="space-y-4">
-        <h4 className="text-xl font-bold text-gray-800">
-          {isLoading ? "Loading Comments..." : `${comments.length} Comments`}
-        </h4>
-
-        {isLoading && <p className="text-gray-500">Retrieving feedback...</p>}
-
-        {!isLoading && comments.length === 0 && (
-          <p className="text-gray-500 italic">
-            Be the first to share your thoughts on this lesson!
+        {isLoading ? (
+          <p className="text-gray-400 animate-pulse">Loading discussion...</p>
+        ) : comments.length === 0 ? (
+          <p className="text-gray-500 italic text-center py-4 bg-gray-50 rounded-lg">
+            No comments yet. Be the first to share your insight!
           </p>
+        ) : (
+          comments.map((comment) => (
+            <CommentCard key={comment._id} comment={comment} />
+          ))
         )}
-
-        {comments.map((comment) => (
-          <CommentCard key={comment._id} comment={comment} />
-        ))}
       </div>
     </div>
   );
