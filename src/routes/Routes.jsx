@@ -37,6 +37,7 @@ import ReportedLessons from "../pages/Dashboard/Admin/ReportedLessons";
 import AdminProfile from "../pages/Dashboard/Admin/AdminProfile";
 import About from "../pages/About/About";
 import Contact from "../pages/Contact/Contact";
+import NotFound from "../components/NotFoundPage";
 
 export const router = createBrowserRouter([
   {
@@ -127,5 +128,9 @@ export const router = createBrowserRouter([
         ),
       },
     ],
+  },
+  {
+    path: "*",
+    element: <NotFound />,
   },
 ]);

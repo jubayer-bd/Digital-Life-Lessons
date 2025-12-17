@@ -7,12 +7,10 @@ const Footer = () => {
         {/* Logo & Name */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <img
-              src="/logo.png"
-              alt="Digital Life Lessons"
-              className="w-10 h-10"
-            />
-            <h2 className="text-xl font-bold text-white">
+            <figure className="bg-blue-600 p-2 rounded-lg ">
+              <img src="/1.svg" alt="" />
+            </figure>
+            <h2 className="text-xl font-bold text-blue-600">
               Digital Life Lessons
             </h2>
           </div>
@@ -23,41 +21,39 @@ const Footer = () => {
 
         {/* Contact Info */}
         <div>
-          <h3 className="text-white font-semibold mb-4">Contact</h3>
+          <h3 className="text-blue-600 font-semibold mb-4">Contact</h3>
           <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2">
+            <li className="flex items-center gap-2 hover:text-blue-600">
               <Mail size={16} /> support@digitallifelessons.com
             </li>
-            <li>Dhaka, Bangladesh</li>
+            <li className="hover:text-blue-600">Dhaka, Bangladesh</li>
           </ul>
         </div>
 
         {/* Legal */}
         <div>
-          <h3 className="text-white font-semibold mb-4">Legal</h3>
+          <h3 className="text-blue-600 font-semibold mb-4">Legal</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <a href="/terms" className="hover:text-white transition">
+              <a className="hover:text-blue-600 transition">
                 Terms & Conditions
               </a>
             </li>
             <li>
-              <a href="/privacy" className="hover:text-white transition">
-                Privacy Policy
-              </a>
+              <a className="hover:text-blue-600 transition">Privacy Policy</a>
             </li>
           </ul>
         </div>
 
         {/* Social */}
         <div>
-          <h3 className="text-white font-semibold mb-4">Follow Us</h3>
+          <h3 className="text-blue-600 font-semibold mb-4">Follow Us</h3>
           <div className="flex gap-4">
             <a
               href="https://facebook.com"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-white transition"
+              className="hover:text-blue-600 transition"
             >
               <Facebook />
             </a>
@@ -65,7 +61,7 @@ const Footer = () => {
               href="https://linkedin.com"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-white transition"
+              className="hover:text-blue-600 transition"
             >
               <Linkedin />
             </a>
@@ -73,7 +69,7 @@ const Footer = () => {
               href="https://github.com"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-white transition"
+              className="hover:text-blue-600 transition"
             >
               <Github />
             </a>
