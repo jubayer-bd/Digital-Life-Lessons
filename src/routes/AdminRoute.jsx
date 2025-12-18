@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate, useLocation } from "react-router"; // 1. Added missing imports
+import { Navigate, useLocation } from "react-router-dom";
 import Forbidden from "../Components/Forbidden";
 import useAuth from "../hooks/useAuth";
 import useRole from "../hooks/useRole";
@@ -7,7 +7,7 @@ import useRole from "../hooks/useRole";
 const AdminRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const { role, roleLoading } = useRole();
-  const location = useLocation(); 
+  const location = useLocation();
 
   // 3. Loading State
   if (loading || roleLoading) {

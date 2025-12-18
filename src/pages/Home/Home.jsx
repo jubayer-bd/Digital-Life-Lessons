@@ -1,4 +1,7 @@
 import { HeroSlider } from "../../components/HeroSlider";
+import MostSavedLessons from "../../components/MostSavedLessons";
+import TopContributors from "../../components/TopContributors";
+import WhyLearningMatters from "../../components/WhyLearningMatters";
 import { AboutSection } from "./AboutSection";
 import CallToAction from "./CallToAction";
 import Categories from "./Categories";
@@ -17,6 +20,9 @@ const Home = () => {
       {/* <Hero /> */}
       <HeroSlider />
       <FeaturedLessons />
+      <WhyLearningMatters />
+      <TopContributors />
+      <MostSavedLessons />
       {/* <Categories />
       <WhyChooseUs />
     
@@ -24,10 +30,10 @@ const Home = () => {
       <CallToAction />
       <PopularCategories /> */}
       {/* <InsightCard /> */}
-      <AboutSection />
-      <PillarsSection />
+      {/* <AboutSection /> */}
+      {/* <PillarsSection /> */}
       {/* <FeaturedLesson /> */}
-      <NewsletterCTA />
+      {/* <NewsletterCTA /> */}
     </div>
   );
 };

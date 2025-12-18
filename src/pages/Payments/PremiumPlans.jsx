@@ -2,15 +2,23 @@ import { useState } from "react";
 import useAxios from "../../hooks/useAxios";
 import useAuth from "../../hooks/useAuth";
 import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
 export default function PremiumPlans() {
   const axiosSecure = useAxios();
-  const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handlePayment = async () => {
+    // Extra safety (normally PrivateRoute already ensures this)
     if (!user) {
-      return Swal.fire("Error", "Please login first!", "error");
+      Swal.fire({
+        icon: "warning",
+        title: "Login Required",
+        text: "Please login to upgrade your plan.",
+      });
+      return navigate("/login", { state: { from: "/pricing/upgrade" } });
     }
 
     setLoading(true);
@@ -27,11 +35,17 @@ export default function PremiumPlans() {
         paymentInfo
       );
 
-      if (res.data?.url) {
-        window.location.assign(res.data.url);
+      if (res?.data?.url) {
+        window.location.href = res.data.url;
+      } else {
+        throw new Error("Payment URL not received");
       }
     } catch (error) {
-      Swal.fire("Error", "Unable to start payment session.", "error");
+      Swal.fire({
+        icon: "error",
+        title: "Payment Failed",
+        text: "Unable to start payment session. Please try again.",
+      });
     } finally {
       setLoading(false);
     }

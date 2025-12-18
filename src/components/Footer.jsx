@@ -1,4 +1,5 @@
-import { Facebook, Linkedin, Github, Mail } from "lucide-react";
+import { Facebook, Linkedin, Github, Mail, MapPin } from "lucide-react";
+import { Link } from "react-router";
 
 const Footer = () => {
   return (
@@ -6,14 +7,14 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-6 py-12 grid gap-10 md:grid-cols-4">
         {/* Logo & Name */}
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
+          <Link className="flex items-center gap-3">
             <figure className="bg-blue-600 p-2 rounded-lg ">
               <img src="/1.svg" alt="" />
             </figure>
-            <h2 className="text-xl font-bold text-blue-600">
+            <h2 className="text-xl  font-bold text-blue-600">
               Digital Life Lessons
             </h2>
-          </div>
+          </Link>
           <p className="text-sm text-gray-400">
             Learn, share, and grow through real digital life experiences.
           </p>
@@ -26,7 +27,10 @@ const Footer = () => {
             <li className="flex items-center gap-2 hover:text-blue-600">
               <Mail size={16} /> support@digitallifelessons.com
             </li>
-            <li className="hover:text-blue-600">Dhaka, Bangladesh</li>
+            <li className="flex items-center gap-2 hover:text-blue-600">
+              <MapPin size={16} />
+              Dhaka, Bangladesh
+            </li>
           </ul>
         </div>
 

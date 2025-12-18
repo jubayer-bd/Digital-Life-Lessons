@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Eye, EyeOff, Upload, User, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Image, User, Mail, Lock } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
-import useAxios from "../../hooks/useAxios";
 
 const Register = () => {
   const { registerUser, updateUserProfile, googleSignIn, user } = useAuth();
@@ -14,7 +13,8 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const axiosSecure = useAxios();
+
+  const from = location.state?.from?.pathname || "/";
 
   const {
     register,
@@ -40,38 +40,35 @@ const Register = () => {
   const handleRegistration = async (data) => {
     setLoading(true);
     try {
-      // 1. Create Account
-      const userCredential = await registerUser(data.email, data.password);
+      // 1. Create account
+      await registerUser(data.email, data.password);
 
-      // 2. Upload Image
-      const profileImg = data.photo[0];
-      const formData = new FormData();
-      formData.append("image", profileImg);
-      const imgApiUrl = `https://api.imgbb.com/1/upload?key=${
-        import.meta.env.VITE_image_host
-      }`;
-      const imgResponse = await axios.post(imgApiUrl, formData);
-      const photoURL = imgResponse.data.data.url;
+      // 2. Use provided URL or a default avatar
+      const photoURL = data.photoURL || "https://i.ibb.co/0Q9Sjst/user-placeholder.png";
 
-      // 3. Save to DB & Firebase
+      // 3. Update Firebase profile
+      await updateUserProfile({
+        displayName: data.name,
+        photoURL: photoURL,
+      });
+
+      // 4. Save user to DB
       const userInfo = {
         email: data.email,
         displayName: data.name,
         photoURL: photoURL,
       };
 
-      await axiosSecure.post("/users", userInfo);
-
-      await updateUserProfile({
-        displayName: data.name,
-        photoURL: photoURL,
-      });
+      await axios.post(
+        "https://life-lessons-server-side.vercel.app/users",
+        userInfo
+      );
 
       toast.success("Account Created Successfully!");
-      navigate(location?.state || "/");
+      navigate(from, { replace: true });
     } catch (error) {
-      console.log(error);
-      toast.error("Registration Failed. Try Again.");
+      console.error(error);
+      toast.error(error.message || "Registration Failed. Try Again.");
     } finally {
       setLoading(false);
     }
@@ -81,24 +78,35 @@ const Register = () => {
     setLoading(true);
     try {
       const result = await googleSignIn();
+
       const userInfo = {
         email: result.user.email,
         displayName: result.user.displayName,
         photoURL: result.user.photoURL,
       };
-      await axiosSecure.post("/users", userInfo);
+
+      await axios.post(
+        "https://life-lessons-server-side.vercel.app/users",
+        userInfo
+      );
+
       toast.success("SignUp Successfully");
-      navigate(location?.state || "/");
+      navigate(from, { replace: true });
     } catch (error) {
+      console.error(error);
       toast.error("SignUp Failed");
     } finally {
       setLoading(false);
     }
   };
-  if (user) {
-    navigate("/");
-    toast.error("you are already login");
-  }
+
+  // Block logged-in users from visiting register page
+  useEffect(() => {
+    if (user && !location.state?.from) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate, location.state]);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <motion.div
@@ -129,7 +137,7 @@ const Register = () => {
               </div>
               <input
                 type="text"
-                {...register("name", { required: true })}
+                {...register("name", { required: "Name is required" })}
                 placeholder="Full Name"
                 className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
               />
@@ -141,39 +149,26 @@ const Register = () => {
                     exit={{ opacity: 0, height: 0 }}
                     className="text-red-500 text-xs mt-1 ml-1"
                   >
-                    Name is required
+                    {errors.name.message}
                   </motion.p>
                 )}
               </AnimatePresence>
             </motion.div>
 
-            {/* Photo Upload */}
+            {/* Photo URL (Updated to Text Input and Optional) */}
             <motion.div variants={itemVariants} className="relative">
-              <div className="relative border border-gray-300 border-dashed rounded-lg p-3 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group">
-                <div className="flex items-center justify-center gap-2 text-gray-500 group-hover:text-blue-600">
-                  <Upload size={18} />
-                  <span className="text-sm font-medium">
-                    Upload Profile Photo
-                  </span>
-                </div>
-                <input
-                  type="file"
-                  {...register("photo", { required: true })}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <Image size={18} />
               </div>
-              <AnimatePresence>
-                {errors.photo && (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="text-red-500 text-xs mt-1 ml-1"
-                  >
-                    Photo is required
-                  </motion.p>
-                )}
-              </AnimatePresence>
+              <input
+                type="url"
+                {...register("photoURL")}
+                placeholder="Profile Photo URL (Optional)"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
+              />
+              <p className="text-[10px] text-gray-400 mt-1 ml-1">
+                Leave empty for default avatar
+              </p>
             </motion.div>
 
             {/* Email */}
@@ -183,7 +178,7 @@ const Register = () => {
               </div>
               <input
                 type="email"
-                {...register("email", { required: true })}
+                {...register("email", { required: "Email is required" })}
                 placeholder="Email Address"
                 className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
               />
@@ -195,7 +190,7 @@ const Register = () => {
                     exit={{ opacity: 0, height: 0 }}
                     className="text-red-500 text-xs mt-1 ml-1"
                   >
-                    Email is required
+                    {errors.email.message}
                   </motion.p>
                 )}
               </AnimatePresence>
@@ -208,7 +203,10 @@ const Register = () => {
               </div>
               <input
                 type={showPass ? "text" : "password"}
-                {...register("password", { required: true, minLength: 6 })}
+                {...register("password", { 
+                  required: "Password is required", 
+                  minLength: { value: 6, message: "Must be at least 6 characters" } 
+                })}
                 placeholder="Password"
                 className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
               />
@@ -227,9 +225,7 @@ const Register = () => {
                     exit={{ opacity: 0, height: 0 }}
                     className="text-red-500 text-xs mt-1 ml-1"
                   >
-                    {errors.password.type === "required"
-                      ? "Password is required"
-                      : "Must be at least 6 characters"}
+                    {errors.password.message}
                   </motion.p>
                 )}
               </AnimatePresence>
@@ -244,7 +240,7 @@ const Register = () => {
               className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <span className="loading loading-spinner loading-sm"></span>
+                <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
               ) : (
                 "Create Account"
               )}
@@ -252,34 +248,15 @@ const Register = () => {
           </motion.div>
         </form>
 
-        <motion.div variants={itemVariants} className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
-                Or continue with
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <motion.button
-              whileHover={{ scale: 1.02, backgroundColor: "#f9fafb" }}
-              whileTap={{ scale: 0.98 }}
+        {/* Google Sign In */}
+        <motion.div variants={itemVariants} className="mt-4">
+            <button
               onClick={handleGoogleSignIn}
-              type="button"
-              className="w-full inline-flex justify-center items-center py-3 px-4 rounded-lg shadow-sm bg-white border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all"
+              disabled={loading}
+              className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
             >
-              <img
-                className="h-5 w-5 mr-2"
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="Google"
-              />
-              Google
-            </motion.button>
-          </div>
+              Sign up with Google
+            </button>
         </motion.div>
 
         <motion.div variants={itemVariants} className="text-center text-sm">

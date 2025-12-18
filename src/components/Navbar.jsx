@@ -8,7 +8,6 @@ export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
   const { isPremium } = useIsPremium();
-  // console.log(isPremium);
   const pathname = location.pathname;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -45,11 +44,14 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm mb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 ">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
+            <figure className="bg-blue-600 p-2 rounded-lg">
+              <img src="/public/1.svg" alt="" />
+            </figure>
             <span className="text-xl md:text-2xl font-bold text-blue-600 tracking-tight">
               Digital Life Lessons
             </span>

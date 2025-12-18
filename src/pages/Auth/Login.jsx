@@ -1,19 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { Link, useLocation, useNavigate } from "react-router-dom"; // Fixed import
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
-import useAxios from "../../hooks/useAxios";
 import useAuth from "../../hooks/useAuth";
+import axios from "axios";
 
 const Login = () => {
-  const { singInUser, googleSignIn, user } = useAuth();
+  const { signInUser, googleSignIn, user } = useAuth(); 
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const axiosSecure = useAxios();
+
+  const from = location.state?.from?.pathname || "/";
 
   const {
     register,
@@ -21,7 +22,7 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
-  // Animation Variants (Reused for consistency)
+  // Animation Variants (unchanged)
   const containerVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
@@ -39,16 +40,10 @@ const Login = () => {
   const handleLogin = async (data) => {
     setLoading(true);
     try {
-      const result = await singInUser(data.email, data.password);
-      const loginInfo = { email: result.user.email };
-      const res = await axiosSecure.post("/login", loginInfo);
-
-      if (res.data?.token) {
-        localStorage.setItem("access-token", res.data.token);
-      }
+      await signInUser(data.email, data.password);
 
       toast.success("Welcome Back!");
-      navigate(location?.state || "/");
+      navigate(from, { replace: true });
     } catch (error) {
       console.error(error);
       toast.error("Invalid credentials. Try again.");
@@ -61,25 +56,34 @@ const Login = () => {
     setLoading(true);
     try {
       const result = await googleSignIn();
+
       const userInfo = {
         email: result.user.email,
         displayName: result.user.displayName,
         photoURL: result.user.photoURL,
       };
 
-      await axiosSecure.post("/users", userInfo);
+      await axios.post(
+        "https://life-lessons-server-side.vercel.app/users",
+        userInfo
+      );
+
       toast.success("Login Successful");
-      navigate(location?.state || "/");
+      navigate(from, { replace: true });
     } catch (error) {
+      console.error(error);
       toast.error("Google Login Failed");
     } finally {
       setLoading(false);
     }
   };
-  if (user) {
-    navigate("/");
-    toast.error("you are already login");
-  }
+
+  // ✅ prevent logged-in users from visiting login directly
+  useEffect(() => {
+    if (user && !location.state?.from) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate, location.state]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -133,7 +137,7 @@ const Login = () => {
               </div>
               <input
                 type={showPass ? "text" : "password"}
-                {...register("password", { required: true })}
+                {...register("password", { required: true, minLength: 6 })}
                 placeholder="Password"
                 className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
               />
@@ -206,6 +210,7 @@ const Login = () => {
               whileHover={{ scale: 1.02, backgroundColor: "#f9fafb" }}
               whileTap={{ scale: 0.98 }}
               onClick={handleGoogleSignIn}
+              disabled={loading}
               type="button"
               className="w-full inline-flex justify-center items-center py-3 px-4 rounded-lg shadow-sm bg-white border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all"
             >

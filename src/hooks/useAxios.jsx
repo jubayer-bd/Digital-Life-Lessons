@@ -2,8 +2,8 @@ import axios from "axios";
 import React, { useEffect } from "react";
 import useAuth from "./useAuth";
 const axiosSecure = axios.create({
-  baseURL: "https://life-lessons-server-side.vercel.app/",
-  // baseURL: "http://localhost:3000/",
+  // baseURL: "https://life-lessons-server-side.vercel.app/",
+  baseURL: "http://localhost:3000/",
 });
 const useAxios = () => {
   const { user, loading, logout } = useAuth();
@@ -19,17 +19,17 @@ const useAxios = () => {
       }
     );
 
-    // intercept responses
     const resInterceptor = axiosSecure.interceptors.response.use(
       (response) => response,
-      (error) => {
+      async (error) => {
         const statusCode = error.response?.status;
 
+        // Only logout silently (optional)
         if (!loading && (statusCode === 401 || statusCode === 403)) {
-          logout().then(() => {
-            window.location.href = "/login";
-          });
+          await logout();
+        
         }
+
         return Promise.reject(error);
       }
     );

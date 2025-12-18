@@ -102,7 +102,7 @@ const LessonCard = ({ lesson }) => {
 
           {/* Action Button */}
           <Link
-            to={isLocked ? "/subscription" : `/lessons/${lesson._id}`}
+            to={isLocked ? "/pricing/upgrade" : `/lessons/${lesson._id}`}
             className={`group/btn relative inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-300 ${
               isLocked
                 ? "bg-gray-900 text-white hover:bg-gray-800 shadow-lg shadow-gray-200"
