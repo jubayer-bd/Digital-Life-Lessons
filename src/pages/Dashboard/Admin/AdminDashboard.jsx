@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import useAxios from "../../../hooks/useAxios";
 import PageLoader from "../../../components/PageLoader";
 import {
@@ -8,7 +8,6 @@ import {
   Flag,
   Flame,
   PlusCircle,
-  TrendingUp,
   MoreVertical,
   ArrowUpRight,
   ArrowDownRight,
@@ -24,19 +23,19 @@ import {
   AreaChart,
   Area,
 } from "recharts";
+import { Link } from "react-router";
 
-// --- 1. UTILS & SUB-COMPONENTS (Defined outside to prevent re-creation) ---
-
+// -------------------- TOOLTIP --------------------
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white/90 backdrop-blur-md p-4 border border-gray-100 shadow-xl rounded-xl text-sm">
+      <div className="bg-white/95 backdrop-blur-md p-2 sm:p-3 border border-gray-200 shadow-xl rounded-lg text-xs sm:text-sm">
         <p className="font-bold text-gray-800 mb-1">{label}</p>
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-          <p className="text-gray-600 font-medium">
+          <div className="w-2 h-2 rounded-full bg-blue-600" />
+          <p className="text-gray-600">
             {payload[0].name}:{" "}
-            <span className="text-blue-600 font-bold">{payload[0].value}</span>
+            <span className="font-bold text-blue-600">{payload[0].value}</span>
           </p>
         </div>
       </div>
@@ -45,236 +44,230 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+// -------------------- STAT CARD --------------------
 const StatCard = React.memo(
-  ({ title, value, icon: Icon, color = "blue", trend, trendUp = true }) => {
-    const styles = {
-      blue: "bg-blue-50 text-blue-600 ring-blue-100",
-      green: "bg-emerald-50 text-emerald-600 ring-emerald-100",
-      red: "bg-rose-50 text-rose-600 ring-rose-100",
-      purple: "bg-violet-50 text-violet-600 ring-violet-100",
-    };
+  ({ title, value = 0, icon: Icon, trend, trendUp = true }) => (
+    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-sm hover:shadow-md transition-all">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">
+            {title}
+          </p>
+          <h3 className="text-xl sm:text-3xl font-bold text-gray-900">
+            {Number(value).toLocaleString()}
+          </h3>
 
-    return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 border border-gray-200/60 group">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500 mb-2">{title}</p>
-            <h3 className="text-3xl font-extrabold text-gray-800 tracking-tight">
-              {value.toLocaleString()}
-            </h3>
-            {trend && (
-              <div
-                className={`flex items-center gap-1 mt-3 text-xs font-semibold ${
-                  trendUp ? "text-emerald-600" : "text-rose-600"
-                }`}
-              >
-                {trendUp ? (
-                  <ArrowUpRight size={14} />
-                ) : (
-                  <ArrowDownRight size={14} />
-                )}
-                <span className="bg-opacity-10 px-1.5 py-0.5 rounded-md bg-current">
-                  {trend}
-                </span>
-              </div>
-            )}
-          </div>
-          <div
-            className={`p-3.5 rounded-xl ring-1 ${
-              styles[color] || styles.blue
-            } group-hover:scale-110 transition-transform duration-300`}
-          >
-            <Icon size={24} />
-          </div>
-        </div>
-      </div>
-    );
-  }
-);
-
-const AdminCharts = React.memo(({ lessonStats = [], userStats = [] }) => {
-  return (
-    <div className="grid lg:grid-cols-2 gap-6 mt-8">
-      {/* Lesson Growth Chart */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200/60 hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h3 className="font-bold text-gray-800 text-lg">Lesson Activity</h3>
-            <p className="text-xs text-gray-500">Content upload frequency</p>
-          </div>
-        </div>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={lessonStats}
-              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+          {trend && (
+            <div
+              className={`flex items-center gap-1 mt-2 sm:mt-3 text-[11px] sm:text-xs font-bold ${
+                trendUp ? "text-emerald-600" : "text-rose-600"
+              }`}
             >
-              <defs>
-                <linearGradient id="colorLessons" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="#F3F4F6"
-              />
-              <XAxis
-                dataKey="date"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#9CA3AF", fontSize: 11 }}
-                dy={10}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#9CA3AF", fontSize: 11 }}
-              />
-              <Tooltip
-                content={<CustomTooltip />}
-                cursor={{
-                  stroke: "#3B82F6",
-                  strokeWidth: 1,
-                  strokeDasharray: "4 4",
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="count"
-                name="Lessons"
-                stroke="#3B82F6"
-                strokeWidth={3}
-                fillOpacity={1}
-                fill="url(#colorLessons)"
-                activeDot={{ r: 6, strokeWidth: 0 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+              {trendUp ? (
+                <ArrowUpRight size={14} />
+              ) : (
+                <ArrowDownRight size={14} />
+              )}
+              <span>{trend}</span>
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* User Growth Chart */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200/60 hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h3 className="font-bold text-gray-800 text-lg">New Users</h3>
-            <p className="text-xs text-gray-500">Registration trends</p>
-          </div>
-        </div>
-        <div className="h-[300px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart
-              data={userStats}
-              margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="#F3F4F6"
-              />
-              <XAxis
-                dataKey="date"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#9CA3AF", fontSize: 11 }}
-                dy={10}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#9CA3AF", fontSize: 11 }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Line
-                type="monotone"
-                dataKey="count"
-                name="Users"
-                stroke="#10B981"
-                strokeWidth={3}
-                dot={{ r: 4, strokeWidth: 2, fill: "#fff", stroke: "#10B981" }}
-                activeDot={{ r: 7, strokeWidth: 0, fill: "#10B981" }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="p-2 sm:p-3 rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100 shrink-0">
+          <Icon size={20} />
         </div>
       </div>
     </div>
-  );
-});
+  )
+);
 
+// -------------------- CHARTS --------------------
+const AdminCharts = React.memo(({ lessonStats = [], userStats = [] }) => (
+  <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6 mt-6 sm:mt-8">
+    {/* Lesson Activity */}
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200/60">
+      <h3 className="font-bold text-gray-800 text-sm sm:text-lg mb-3 sm:mb-6">
+        Lesson Activity
+      </h3>
+      <div className="h-[220px] sm:h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={lessonStats}>
+            <defs>
+              <linearGradient id="colorLessons" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#F3F4F6"
+            />
+            <XAxis
+              dataKey="date"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9CA3AF", fontSize: 10 }}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9CA3AF", fontSize: 10 }}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Area
+              type="monotone"
+              dataKey="count"
+              name="Lessons"
+              stroke="#2563EB"
+              strokeWidth={2.5}
+              fill="url(#colorLessons)"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+
+    {/* User Growth */}
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200/60">
+      <h3 className="font-bold text-gray-800 text-sm sm:text-lg mb-3 sm:mb-6">
+        New Users
+      </h3>
+      <div className="h-[220px] sm:h-[300px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={userStats}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#F3F4F6"
+            />
+            <XAxis
+              dataKey="date"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9CA3AF", fontSize: 10 }}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9CA3AF", fontSize: 10 }}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line
+              type="monotone"
+              dataKey="count"
+              name="Users"
+              stroke="#2563EB"
+              strokeWidth={2.5}
+              dot={{ r: 3, fill: "#fff", stroke: "#2563EB", strokeWidth: 2 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  </div>
+));
+
+// -------------------- TOP CONTRIBUTORS --------------------
 const TopContributors = React.memo(({ contributors = [] }) => {
-  if (contributors.length === 0) return null;
+  if (!contributors.length) return null;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200/60 mt-8">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-bold text-gray-800 text-lg flex items-center gap-2">
-          <span className="p-2 bg-orange-50 rounded-lg text-orange-500">
-            <Flame size={20} />
-          </span>
-          Top Contributors
-        </h3>
-        <button className="text-sm text-blue-600 font-semibold hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors">
-          View All
-        </button>
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200/60 mt-6 sm:mt-8">
+      <h3 className="font-bold text-gray-800 text-sm sm:text-lg flex items-center gap-2 mb-4 sm:mb-6">
+        <span className="p-2 bg-orange-50 rounded-lg text-orange-500">
+          <Flame size={18} />
+        </span>
+        Top Contributors
+      </h3>
+
+      {/* Mobile Card View */}
+      <div className="space-y-3 sm:hidden">
+        {contributors.map((user, i) => (
+          <div
+            key={user.email || i}
+            className="border border-gray-100 rounded-xl p-3 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
+                {user.image ? (
+                  <img
+                    src={user.image}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  user.name?.charAt(0)
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800 text-sm">
+                  {user.name}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {user.lessonCount} lessons
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-gray-400">
+              {i < 3 ? ["🥇", "🥈", "🥉"][i] : `#${i + 1}`}
+            </span>
+          </div>
+        ))}
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      {/* Desktop Table */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left">
           <thead>
-            <tr className="text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
-              <th className="pb-3 pl-2">Rank</th>
-              <th className="pb-3">User</th>
-              <th className="pb-3 text-center">Lessons</th>
-              <th className="pb-3 text-right">Actions</th>
+            <tr className="text-xs font-semibold text-gray-400 uppercase border-b border-gray-100">
+              <th className="pb-4">Rank</th>
+              <th className="pb-4">User</th>
+              <th className="pb-4 text-center">Lessons</th>
+              <th className="pb-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
             {contributors.map((user, i) => (
               <tr
-                key={user._id || i}
-                className="hover:bg-gray-50/80 transition-colors group cursor-default"
+                key={user.email || i}
+                className="hover:bg-gray-50 transition-colors"
               >
-                <td className="py-4 pl-2 font-bold text-gray-400 w-16">
-                  {i === 0
-                    ? "🥇"
-                    : i === 1
-                    ? "🥈"
-                    : i === 2
-                    ? "🥉"
-                    : `#${i + 1}`}
+                <td className="py-4 font-bold text-gray-400 w-16">
+                  {i < 3 ? ["🥇", "🥈", "🥉"][i] : `#${i + 1}`}
                 </td>
                 <td className="py-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-100 to-indigo-100 border border-white shadow-sm flex items-center justify-center text-blue-600 font-bold text-sm">
-                      {user?.image ? (
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold overflow-hidden">
+                      {user.image ? (
                         <img
                           src={user.image}
-                          alt={user.name}
-                          className="w-full h-full rounded-full object-cover"
+                          alt=""
+                          className="w-full h-full object-cover"
                         />
                       ) : (
-                        user?.name?.charAt(0).toUpperCase() || "U"
+                        user.name?.charAt(0)
                       )}
                     </div>
                     <div>
                       <p className="font-semibold text-gray-800">{user.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {user.email || "Contributor"}
-                      </p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
                   </div>
                 </td>
                 <td className="py-4 text-center">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700">
                     {user.lessonCount}
                   </span>
                 </td>
                 <td className="py-4 text-right">
-                  <button className="text-gray-300 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition-all">
-                    <MoreVertical size={18} />
+                  <button className="text-gray-400 hover:text-gray-600">
+                    <Link to={`/profile/${user.email}`}>
+                      {" "}
+                      <MoreVertical size={18} />
+                    </Link>
                   </button>
                 </td>
               </tr>
@@ -286,7 +279,7 @@ const TopContributors = React.memo(({ contributors = [] }) => {
   );
 });
 
-// --- MAIN COMPONENT ---
+// -------------------- MAIN DASHBOARD --------------------
 const AdminDashboard = () => {
   const axiosSecure = useAxios();
 
@@ -296,14 +289,12 @@ const AdminDashboard = () => {
       const res = await axiosSecure.get("/admin/stats");
       return res.data;
     },
-    // Performance: Don't refetch immediately if user switches tabs
-    // staleTime: 1000 * 60 * 5, // 5 minutes
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 5,
   });
 
-  // Calculate default values to avoid UI crashing if API fails or returns partial data
-  const stats = useMemo(() => {
-    return {
+  const stats = useMemo(
+    () => ({
       totalUsers: data?.totalUsers || 0,
       totalPublicLessons: data?.totalPublicLessons || 0,
       reportedLessons: data?.reportedLessons || 0,
@@ -311,20 +302,21 @@ const AdminDashboard = () => {
       topContributors: data?.topContributors || [],
       lessonGrowth: data?.lessonGrowth || [],
       userGrowth: data?.userGrowth || [],
-    };
-  }, [data]);
+    }),
+    [data]
+  );
 
-  if (isLoading) {
-    return <PageLoader text="Analysing data..." />;
-  }
+  if (isLoading) return <PageLoader text="Analysing platform data..." />;
 
   if (isError) {
     return (
-      <div className="h-[50vh] flex flex-col items-center justify-center text-red-500">
-        <p>Failed to load dashboard data.</p>
+      <div className="h-[60vh] flex flex-col items-center justify-center px-4">
+        <div className="p-4 bg-red-50 text-red-600 rounded-lg mb-4 text-sm font-medium text-center">
+          Failed to load dashboard data.
+        </div>
         <button
           onClick={() => window.location.reload()}
-          className="mt-4 text-sm underline text-gray-600"
+          className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-semibold"
         >
           Retry
         </button>
@@ -333,60 +325,48 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto pb-12 px-4 sm:px-6">
-      {/* Header */}
-      <div className="mb-10 mt-6">
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Dashboard Overview
+    <div className="max-w-7xl mx-auto pb-12 px-4 sm:px-6 lg:px-8">
+      <div className="mb-5 sm:mb-8 pt-4 sm:pt-6">
+        <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+          System Overview
         </h1>
-        <p className="text-gray-500 mt-1">
-          Welcome back, Admin. Performance metrics for today.
+        <p className="text-gray-500 text-sm mt-1">
+          Real-time performance metrics and platform health.
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="Total Users"
           value={stats.totalUsers}
           icon={Users}
-          color="blue"
-          trend="12%"
-          trendUp={true}
+          trend="+12% total"
         />
         <StatCard
           title="Public Lessons"
           value={stats.totalPublicLessons}
           icon={BookOpen}
-          color="green"
-          trend="5 Today"
-          trendUp={true}
+          trend="Across all users"
         />
         <StatCard
           title="Reported Issues"
           value={stats.reportedLessons}
           icon={Flag}
-          color="red"
-          trend="Action Req."
-          trendUp={false} // Red trend because reported issues are "bad"
+          trend="Manual review"
+          trendUp={false}
         />
         <StatCard
           title="Today's Uploads"
           value={stats.todayLessons}
           icon={PlusCircle}
-          color="purple"
-          trend="Daily Avg"
-          trendUp={true}
+          trend="Fresh content"
         />
       </div>
 
-      {/* Charts Section */}
       <AdminCharts
         lessonStats={stats.lessonGrowth}
         userStats={stats.userGrowth}
       />
-
-      {/* Contributors Table */}
       <TopContributors contributors={stats.topContributors} />
     </div>
   );

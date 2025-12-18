@@ -78,7 +78,6 @@ const Login = () => {
     }
   };
 
-  // ✅ prevent logged-in users from visiting login directly
   useEffect(() => {
     if (user && !location.state?.from) {
       navigate("/", { replace: true });

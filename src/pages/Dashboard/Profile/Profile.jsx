@@ -1,150 +1,201 @@
-import React, { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-
+import React, { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
-import { Star } from "lucide-react";
+import { Star, User, BookOpen, Heart, Edit3, CheckCircle } from "lucide-react";
 import LessonCard from "../../Lessons/LessonCard";
 import useAuth from "../../../hooks/useAuth";
 import useAxios from "../../../hooks/useAxios";
-import useIsPremium from "../../../hooks/useIsPremimum";
+import useIsPremium from "../../../hooks/useIsPremium";
 
 const Profile = () => {
   const { user, updateUserProfile } = useAuth();
   const axiosSecure = useAxios();
-  const { isPremium } = useIsPremium();
+  const queryClient = useQueryClient();
+  const { isPremium, roleLoading } = useIsPremium();
 
-  const [name, setName] = useState(user?.displayName || "");
-  const [photo, setPhoto] = useState(user?.photoURL || "");
-  const [editing, setEditing] = useState(false);
+  const [editState, setEditState] = useState({
+    isEditing: false,
+    name: user?.displayName || "",
+    photo: user?.photoURL || "",
+  });
 
-  /* ================= COUNTS ================= */
+  // Fetch stats and lessons in separate queries for better UX
   const { data: stats = { created: 0, saved: 0 } } = useQuery({
     queryKey: ["profile-stats", user?.email],
     enabled: !!user?.email,
-    queryFn: async () => {
-      const res = await axiosSecure.get("/users/profile-stats");
-      return res.data;
-    },
+    queryFn: async () => (await axiosSecure.get("/users/profile-stats")).data,
   });
 
-  /* ================= PUBLIC LESSONS ================= */
-  const { data: lessons = [] } = useQuery({
+  const { data: lessons = [], isLoading: lessonsLoading } = useQuery({
     queryKey: ["public-lessons", user?.email],
     enabled: !!user?.email,
-    queryFn: async () => {
-      const res = await axiosSecure.get(`/lessons/user/${user.email}`);
-      return res.data;
-    },
+    queryFn: async () =>
+      (await axiosSecure.get(`/lessons/user/${user.email}`)).data,
   });
 
-  /* ================= UPDATE PROFILE ================= */
   const updateMutation = useMutation({
     mutationFn: async () => {
-      await updateUserProfile(name, photo); // Firebase update
+      await updateUserProfile({
+        displayName: editState.name,
+        photoURL: editState.photo,
+      });
+
       return axiosSecure.patch("/users/profile", {
-        name,
-        photo,
+        displayName: editState.name,
+        photoURL: editState.photo,
       });
     },
     onSuccess: () => {
-      toast.success("Profile updated");
-      setEditing(false);
+      toast.success("Profile Updated", { id: "user-upd" });
+      setEditState((prev) => ({ ...prev, isEditing: false }));
+      queryClient.invalidateQueries(["public-lessons"]);
     },
-    onError: () => toast.error("Update failed"),
   });
 
-  const handleUpdate = (e) => {
-    e.preventDefault();
-    updateMutation.mutate();
-  };
+  if (roleLoading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <span className="loading loading-dots loading-lg"></span>
+      </div>
+    );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10 space-y-10">
-      {/* PROFILE HEADER */}
-      <div className="bg-white rounded-2xl shadow p-6 flex flex-col md:flex-row gap-6 items-center">
-        <img
-          src={photo || "/avatar.png"}
-          alt="Profile"
-          className="w-28 h-28 rounded-full object-cover"
-        />
-
-        <div className="flex-1">
-          {editing ? (
-            <form onSubmit={handleUpdate} className="space-y-3 max-w-sm">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="input input-bordered w-full"
-                placeholder="Display name"
+    <div className="max-w-7xl mx-auto px-6 py-12 space-y-12">
+      {/* Hero Profile Section */}
+      <section className="bg-gradient-to-br from-white to-gray-50 rounded-[2rem] shadow-sm border p-8">
+        <div className="flex flex-col md:flex-row gap-10 items-center">
+          <div className="relative">
+            <div className="w-36 h-36 rounded-3xl overflow-hidden shadow-2xl rotate-3 bg-white p-2">
+              <img
+                src={
+                  editState.photo ||
+                  "https://ui-avatars.com/api/?name=" + user?.displayName
+                }
+                className="w-full h-full object-cover rounded-2xl"
+                alt="Avatar"
               />
+            </div>
+            {isPremium && (
+              <div className="absolute -top-3 -right-3 bg-yellow-400 text-white p-2 rounded-full shadow-lg border-4 border-white">
+                <Star size={20} fill="currentColor" />
+              </div>
+            )}
+          </div>
 
-              <input
-                value={photo}
-                onChange={(e) => setPhoto(e.target.value)}
-                className="input input-bordered w-full"
-                placeholder="Photo URL"
-              />
+          <div className="flex-1 text-center md:text-left">
+            {editState.isEditing ? (
+              <div className="flex flex-col gap-3 max-w-md">
+                <input
+                  value={editState.name}
+                  onChange={(e) =>
+                    setEditState({ ...editState, name: e.target.value })
+                  }
+                  className="input input-bordered focus:ring-2 ring-blue-500"
+                />
+                <input
+                  value={editState.photo}
+                  onChange={(e) =>
+                    setEditState({ ...editState, photo: e.target.value })
+                  }
+                  className="input input-bordered"
+                  placeholder="Photo URL"
+                />
+                <div className="flex gap-2 justify-center md:justify-start">
+                  <button
+                    onClick={() => updateMutation.mutate()}
+                    className="btn btn-primary btn-sm rounded-full px-6"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() =>
+                      setEditState({ ...editState, isEditing: false })
+                    }
+                    className="btn btn-ghost btn-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                  <h2 className="text-4xl font-black text-gray-900">
+                    {user?.displayName}
+                  </h2>
+                  {isPremium && (
+                    <span className="badge badge-warning font-bold py-3 px-4">
+                      PREMIUM
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-500 font-medium mt-1">{user?.email}</p>
 
-              <div className="flex gap-2">
-                <button type="submit" className="btn btn-primary btn-sm">
-                  Save
-                </button>
+                {/* Stats Grid */}
+                <div className="flex gap-4 mt-6 justify-center md:justify-start">
+                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border shadow-sm">
+                    <BookOpen size={18} className="text-blue-500" />
+                    <span className="font-bold text-gray-800">
+                      {stats.created}
+                    </span>
+                    <span className="text-gray-500 text-sm">Lessons</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border shadow-sm">
+                    <Heart size={18} className="text-pink-500" />
+                    <span className="font-bold text-gray-800">
+                      {stats.saved}
+                    </span>
+                    <span className="text-gray-500 text-sm">Favorites</span>
+                  </div>
+                </div>
+
                 <button
-                  type="button"
-                  onClick={() => setEditing(false)}
-                  className="btn btn-ghost btn-sm"
+                  onClick={() =>
+                    setEditState({ ...editState, isEditing: true })
+                  }
+                  className="mt-6 flex items-center gap-2 text-blue-600 font-semibold hover:underline"
                 >
-                  Cancel
+                  <Edit3 size={16} /> Edit Public Profile
                 </button>
-              </div>
-            </form>
-          ) : (
-            <>
-              <h2 className="text-2xl font-bold flex items-center gap-2">
-                {user?.displayName}
-                {isPremium && (
-                  <span className="flex items-center gap-1 text-yellow-500 text-sm">
-                    <Star size={16} /> Premium
-                  </span>
-                )}
-              </h2>
-
-              <p className="text-gray-500">{user?.email}</p>
-
-              <div className="flex gap-6 mt-3 text-sm text-gray-600">
-                <span>
-                  <strong>{stats.created}</strong> Lessons
-                </span>
-                <span>
-                  <strong>{stats.saved}</strong> Saved
-                </span>
-              </div>
-
-              <button
-                onClick={() => setEditing(true)}
-                className="btn btn-outline btn-sm mt-4"
-              >
-                Edit Profile
-              </button>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* USER PUBLIC LESSONS */}
+      {/* Content Section */}
       <div>
-        <h3 className="text-2xl font-bold mb-6">
-          Public Lessons by {user?.displayName}
-        </h3>
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-2xl font-bold text-gray-900">
+            Portfolio Lessons
+          </h3>
+          <div className="h-px flex-1 bg-gray-100 mx-6 hidden sm:block"></div>
+        </div>
 
-        {lessons.length === 0 ? (
-          <div className="text-gray-500 text-center py-20">
-            No public lessons yet.
+        {lessonsLoading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-64 bg-gray-100 animate-pulse rounded-3xl"
+              ></div>
+            ))}
+          </div>
+        ) : lessons.length === 0 ? (
+          <div className="bg-gray-50 rounded-3xl p-20 text-center border-2 border-dashed">
+            <p className="text-gray-400 font-medium">
+              No public lessons published yet.
+            </p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {lessons.map((lesson) => (
-              <LessonCard key={lesson._id} lesson={lesson} />
+              <div
+                key={lesson._id}
+                className="transition-transform hover:-translate-y-2"
+              >
+                <LessonCard lesson={lesson} />
+              </div>
             ))}
           </div>
         )}

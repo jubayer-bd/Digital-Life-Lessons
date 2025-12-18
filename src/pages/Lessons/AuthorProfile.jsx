@@ -20,7 +20,7 @@ const AuthorProfile = () => {
     },
     retry: 1,
   });
-  console.log(author);
+ 
   // 2. Fetch Author's Lessons
   const { data: lessons = [], isLoading: lessonsLoading } = useQuery({
     queryKey: ["authorLessons", email],

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { Lock, Unlock, ArrowRight, User, Star, Clock } from "lucide-react"; // install lucide-react if not present
-import useIsPremium from "../../hooks/useIsPremimum";
+import useIsPremium from "../../hooks/useIsPremium";
 
 const LessonCard = ({ lesson }) => {
   const { isPremium: isUserPremium } = useIsPremium();

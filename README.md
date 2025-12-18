@@ -1,16 +1,105 @@
-# React + Vite
+# Digital Life Lessons
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Project Overview
 
-Currently, two official plugins are available:
+Digital Life Lessons is a full-stack EdTech (LMS-style) web application built using the MERN stack. The platform allows users to explore life-improvement lessons, save favorites, and access premium content. Instructors can add and manage lessons, while admins control overall platform moderation.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The application is fully responsive, role-based, and implemented as a Single Page Application (SPA).
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Live Links
 
-## Expanding the ESLint configuration
+- Client: https://digital-life-lessons-web.netlify.app/
+- Server: https://life-lessons-server-side.vercel.app/
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Features
+
+### General Features
+
+- Single Page Application (SPA) using React Router
+- Fully responsive UI for mobile, tablet, and desktop
+- Dynamic page titles
+- Loading spinner for API calls
+- Toast notifications for all success and error messages
+
+### Authentication
+
+- Email & Password login and registration
+- Google social authentication
+- Persistent login on page reload
+- Password validation during registration
+
+### Lessons
+
+- Browse all lessons
+- Filter lessons by category
+- View lesson details
+- Favorite and unfavorite lessons
+- Premium-only lesson restriction
+
+### Premium System
+
+- Premium status checking
+- Premium badge for premium users
+- Conditional access based on subscription
+
+### User Dashboard
+
+- View profile information
+- View favorite lessons
+- Manage personal data
+
+### Instructor Dashboard
+
+- Add new lessons
+- Update lessons
+- Delete lessons
+- View own created lessons
+
+### Admin Dashboard
+
+- Manage all users
+- Control user roles (admin, instructor, user)
+- Moderate lesson content
+
+---
+
+## Technology Stack
+
+### Frontend
+
+- React
+- React Router DOM
+- Tailwind CSS
+- TanStack React Query
+- Axios
+- Framer Motion
+- React Hot Toast
+
+### Backend
+
+- Node.js
+- Express.js
+- MongoDB
+- JWT Authentication
+- Firebase Admin SDK
+
+---
+
+## NPM Packages Used
+
+- react-router-dom
+- @tanstack/react-query
+- axios
+- firebase
+- react-hot-toast
+- framer-motion
+- lucide-react
+
+---
+
+## Folder Structure (Client)
+

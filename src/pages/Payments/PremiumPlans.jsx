@@ -1,17 +1,35 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import useAxios from "../../hooks/useAxios";
 import useAuth from "../../hooks/useAuth";
-import Swal from "sweetalert2";
-import { useNavigate } from "react-router-dom";
+import useIsPremium from "../../hooks/useIsPremium";
 
 export default function PremiumPlans() {
   const axiosSecure = useAxios();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { isPremium } = useIsPremium();
+  console.log(isPremium);
   const navigate = useNavigate();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
-  const handlePayment = async () => {
-    // Extra safety (normally PrivateRoute already ensures this)
+  // Hide page if already premium
+  if (isPremium) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-3">
+            You’re a <span className="text-blue-600">Premium</span> Member ⭐
+          </h2>
+          <p className="text-gray-600">
+            Enjoy unlimited access to all premium features.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleUpgrade = async () => {
     if (!user) {
       Swal.fire({
         icon: "warning",
@@ -21,67 +39,71 @@ export default function PremiumPlans() {
       return navigate("/login", { state: { from: "/pricing/upgrade" } });
     }
 
-    setLoading(true);
+    setIsRedirecting(true);
 
     try {
-      const paymentInfo = {
+      const payload = {
         name: user.displayName,
         email: user.email,
         price: 1500,
       };
 
-      const res = await axiosSecure.post(
-        "/payment-checkout-session",
-        paymentInfo
-      );
+      const res = await axiosSecure.post("payment-checkout-session", payload);
 
-      if (res?.data?.url) {
-        window.location.href = res.data.url;
-      } else {
-        throw new Error("Payment URL not received");
+      if (!res?.data?.url) {
+        throw new Error("Stripe checkout URL missing");
       }
+
+      // ✅ Page navigation loading only
+      window.location.replace(res.data.url);
     } catch (error) {
       Swal.fire({
         icon: "error",
         title: "Payment Failed",
-        text: "Unable to start payment session. Please try again.",
+        text: "Unable to start payment. Please try again.",
       });
-    } finally {
-      setLoading(false);
+      setIsRedirecting(false);
     }
   };
 
   const features = [
-    { label: "Access to Lessons", free: "Limited", premium: "Unlimited" },
-    { label: "Premium Lesson Access", free: "No", premium: "Yes" },
+    { label: "Lesson Access", free: "Limited", premium: "Unlimited" },
     { label: "Create Premium Lessons", free: "No", premium: "Yes" },
+    { label: "Access Premium Lessons", free: "No", premium: "Yes" },
     { label: "Ad-Free Experience", free: "No", premium: "Yes" },
     { label: "Priority Lesson Listing", free: "No", premium: "Yes" },
     { label: "Downloadable Resources", free: "No", premium: "Yes" },
-    { label: "Early Access to New Features", free: "No", premium: "Yes" },
+    { label: "Early Feature Access", free: "No", premium: "Yes" },
     { label: "Priority Support", free: "No", premium: "Yes" },
   ];
 
   return (
-    <div className="max-w-4xl mx-auto my-16 p-6">
-      <h2 className="text-3xl font-bold text-center mb-8">
-        Upgrade to <span className="text-blue-600">Premium</span>
-      </h2>
+    <section className="max-w-4xl mx-auto my-20 px-6">
+      <header className="text-center mb-10">
+        <h1 className="text-4xl font-bold">
+          Upgrade to <span className="text-blue-600">Premium</span>
+        </h1>
+        <p className="text-gray-600 mt-3">
+          One-time payment. Lifetime access. No hidden fees.
+        </p>
+      </header>
 
-      <div className="overflow-x-auto shadow-xl rounded-xl bg-white">
-        <table className="table w-full text-center">
-          <thead>
-            <tr className="bg-gray-100 text-lg">
-              <th className="py-4">Features</th>
+      <div className="overflow-hidden rounded-2xl  shadow-sm bg-white">
+        <table className="w-full text-center">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="py-4 text-left px-6">Features</th>
               <th>Free</th>
-              <th>Premium</th>
+              <th className="text-blue-600">Premium</th>
             </tr>
           </thead>
 
           <tbody>
-            {features.map((item, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="font-medium py-3">{item.label}</td>
+            {features.map((item, index) => (
+              <tr key={index} className=" hover:bg-gray-50 transition">
+                <td className="py-4 px-6 font-medium text-left">
+                  {item.label}
+                </td>
                 <td className="text-red-500 font-semibold">{item.free}</td>
                 <td className="text-green-600 font-semibold">{item.premium}</td>
               </tr>
@@ -90,19 +112,21 @@ export default function PremiumPlans() {
         </table>
       </div>
 
-      <div className="text-center mt-10">
+      <div className="text-center mt-12">
         <button
-          onClick={handlePayment}
-          disabled={loading}
-          className="px-8 py-4 bg-blue-600 text-white text-lg rounded-xl shadow-lg hover:bg-blue-700 transition disabled:bg-gray-400"
+          onClick={handleUpgrade}
+          disabled={isRedirecting}
+          className="px-10 py-4 bg-blue-600 text-white text-lg rounded-xl shadow-md hover:bg-blue-700 transition disabled:bg-gray-400"
         >
-          {loading ? "Redirecting..." : "Upgrade to Premium – ৳1500"}
+          {isRedirecting
+            ? "Redirecting to Stripe..."
+            : "Upgrade to Premium — ৳1500"}
         </button>
 
         <p className="text-sm mt-3 text-gray-500">
-          One-time payment • Lifetime access
+          Secure payment • Lifetime access
         </p>
       </div>
-    </div>
+    </section>
   );
 }

@@ -8,6 +8,8 @@ import {
   PlusCircle,
   BarChart3,
   TrendingUp,
+  Globe,
+  Lock,
 } from "lucide-react";
 import { Line } from "react-chartjs-2";
 import {
@@ -64,6 +66,7 @@ const DashboardHome = () => {
       return res.data;
     },
   });
+  console.log(recentLessons);
 
   // Analytics
   const { data: analytics = { labels: [], counts: [] } } = useQuery({
@@ -139,71 +142,44 @@ const DashboardHome = () => {
   ];
 
   return (
-    <div className="p-6 space-y-8 bg-gray-50 min-h-screen">
+    <div className="space-y-6 md:space-y-8">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
             Dashboard Overview
           </h1>
-          <p className="text-gray-500">
+          <p className="text-gray-500 text-sm">
             Welcome back! Here’s your activity summary.
           </p>
         </div>
-
         <Link
           to="/dashboard/add-lesson"
-          className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg hover:bg-indigo-700 transition"
+          className="w-full sm:w-auto flex justify-center items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition shadow-lg shadow-blue-200"
         >
           <PlusCircle size={20} />
           Create Lesson
         </Link>
       </div>
 
-      {/* QUICK ACTIONS */}
-      {/* <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Link
-          to="/dashboard/my-lessons"
-          className="bg-white p-5 rounded-xl border hover:shadow transition"
-        >
-          <BookOpen className="text-indigo-600 mb-2" />
-          <h3 className="font-semibold">My Lessons</h3>
-          <p className="text-sm text-gray-500">Manage your lessons</p>
-        </Link>
-
-        <Link
-          to="/dashboard/saved-lessons"
-          className="bg-white p-5 rounded-xl border hover:shadow transition"
-        >
-          <Heart className="text-pink-600 mb-2" />
-          <h3 className="font-semibold">Saved Lessons</h3>
-          <p className="text-sm text-gray-500">Your bookmarked lessons</p>
-        </Link>
-
-        <Link
-          to="/dashboard/add-lesson"
-          className="bg-indigo-600 text-white p-5 rounded-xl hover:bg-indigo-700 transition"
-        >
-          <PlusCircle className="mb-2" />
-          <h3 className="font-semibold">Create Lesson</h3>
-          <p className="text-sm opacity-90">Share your experience</p>
-        </Link>
-      </div> */}
-
       {/* STATS */}
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {stats.map((stat, i) => (
           <Link
             to={stat.link}
             key={i}
-            className="bg-white p-6 rounded-2xl shadow-md hover:shadow transition"
+            className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition"
           >
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-500">{stat.title}</p>
-                <h3 className="text-3xl font-bold">{stat.count}</h3>
+                <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wider font-semibold">
+                  {stat.title}
+                </p>
+                <h3 className="text-2xl md:text-3xl font-bold mt-1">
+                  {stat.count}
+                </h3>
               </div>
-              <div className={`p-4 rounded-xl ${stat.color}`}>
+              <div className={`p-3 md:p-4 rounded-xl ${stat.color}`}>
                 <stat.icon size={24} />
               </div>
             </div>
@@ -211,56 +187,90 @@ const DashboardHome = () => {
         ))}
       </div>
 
-      {/* RECENT LESSONS */}
-      <div className="bg-white p-6 rounded-2xl shadow-md">
-        <div className="flex justify-between mb-4">
-          <h2 className="text-xl font-bold">Recently Added Lessons</h2>
-          <Link
-            to="/dashboard/my-lessons"
-            className="text-indigo-600 text-sm hover:underline"
-          >
-            View all
-          </Link>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+        {/* RECENT LESSONS */}
+        <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg md:text-xl font-bold">Recently Added</h2>
+            <Link
+              to="/dashboard/my-lessons"
+              className="text-blue-600 text-sm hover:underline font-medium"
+            >
+              View all
+            </Link>
+          </div>
+          <div className="overflow-x-auto bg-white rounded-xl shadow">
+            {lessons.length == 0 ? (
+              <span className="p-2">You Currently have any lesson</span>
+            ) : (
+              <table className="table w-full">
+                <thead className="bg-gray-50 text-center text-sm">
+                  <tr>
+                    <th>Title</th>
+                    <th>Created</th>
+                    {/* <th>Likes</th> */}
+                    {/* <th>Saves</th> */}
+                    <th>Visibility</th>
+                    <th>Access</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {recentLessons.map((lesson) => (
+                    <tr key={lesson._id} className="text-center">
+                      <td>
+                        <Link
+                          to={`/lessons/${lesson._id}`}
+                          className="font-semibold hover:underline"
+                        >
+                          {lesson.title}
+                        </Link>
+                      </td>
+
+                      <td>{new Date(lesson.createdAt).toLocaleDateString()}</td>
+
+                      {/* <td>{lesson.likes?.length || 0}</td> */}
+                      {/* <td>{lesson.favorites?.length || 0}</td> */}
+
+                      <td>
+                        {lesson.visibility === "private" ? (
+                          <span className="flex items-center gap-1 text-gray-500">
+                            <Lock size={14} /> Private
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-green-600">
+                            <Globe size={14} /> Public
+                          </span>
+                        )}
+                      </td>
+
+                      <td>
+                        <span
+                          className={`badge ${
+                            lesson.accessLevel === "premium"
+                              ? "badge-warning"
+                              : "badge-success"
+                          }`}
+                        >
+                          {lesson.accessLevel}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
-        {recentLessons.length === 0 ? (
-          <p className="text-gray-400">No lessons yet.</p>
-        ) : (
-          <ul className="space-y-3">
-            {recentLessons.map((lesson) => (
-              <li
-                key={lesson._id}
-                className="flex justify-between items-center p-4 shadow-md rounded-lg hover:bg-gray-50"
-              >
-                <div>
-                  <h3 className="font-semibold">{lesson.title}</h3>
-                  <p className="text-xs text-gray-400">
-                    {lesson.category} •{" "}
-                    {new Date(lesson.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-
-                <Link
-                  to={`/lessons/${lesson._id}`}
-                  className="text-indigo-600 text-sm hover:underline"
-                >
-                  View
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* CHART */}
-      <div className="bg-white p-6 rounded-2xl shadow-md">
-        <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
-          <BarChart3 className="text-indigo-600" />
-          Weekly Activity
-        </h2>
-
-        <div className="h-72">
-          <Line data={chartData} options={chartOptions} />
+        {/* CHART */}
+        <div className="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h2 className="text-lg md:text-xl font-bold flex items-center gap-2 mb-6">
+            <BarChart3 className="text-blue-600" /> Activity
+          </h2>
+          <div className="h-64">
+            <Line data={chartData} options={chartOptions} />
+          </div>
         </div>
       </div>
     </div>

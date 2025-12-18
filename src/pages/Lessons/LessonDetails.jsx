@@ -14,6 +14,7 @@ import {
   Copy,
   X,
   ArrowLeft,
+  CalendarCog,
 } from "lucide-react";
 import {
   FacebookShareButton,
@@ -33,7 +34,7 @@ import ReportModal from "./ReportModal";
 import CommentSection from "./CommentSection";
 import RelatedLessons from "./RelatedLessons";
 import PageLoader from "../../components/PageLoader";
-import useIsPremium from "../../hooks/useIsPremimum";
+import useIsPremium from "../../hooks/useIsPremium";
 
 const LessonDetails = () => {
   const { id } = useParams();
@@ -42,7 +43,7 @@ const LessonDetails = () => {
   const { user } = useAuth();
 
   // Custom hook for premium status
-  const { isPremium, isPending: isPremiumLoading } = useIsPremium();
+  const { isPremium, roleLoading } = useIsPremium();
 
   const shareUrl = window.location.href;
 
@@ -68,7 +69,14 @@ const LessonDetails = () => {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [viewCount] = useState(Math.floor(Math.random() * 5000) + 500); // Static random
-
+  const { data: userLessons = [], isLoading: lessonsLoading } = useQuery({
+    queryKey: ["authorLessons", user?.email],
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/users/${user?.email}/lessons`);
+      return res.data;
+    },
+  });
+  // console.log(userLessons);
   // Sync state when data loads
   useEffect(() => {
     if (lesson) {
@@ -81,7 +89,7 @@ const LessonDetails = () => {
     }
   }, [lesson, user]);
 
-  if (isLoading || isPremiumLoading)
+  if (isLoading || roleLoading)
     return <PageLoader text="Loading content..." />;
 
   if (isError || !lesson) {
@@ -179,20 +187,32 @@ const LessonDetails = () => {
         <h1 className="text-3xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
           {lesson.title}
         </h1>
-
-        <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 mb-8 pb-8 border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <Calendar size={18} className="text-gray-400" />
-            {new Date(lesson.createdAt).toLocaleDateString(undefined, {
-              dateStyle: "medium",
-            })}
+        <div className="flex justify-between flex-wrap text-sm text-gray-500 mb-8 pb-8 border-b border-gray-100">
+          <div className="flex  items-center gap-6  ">
+            <div className="flex items-center gap-2">
+              <Calendar size={18} className="text-gray-400" />
+              {new Date(lesson.createdAt).toLocaleDateString(undefined, {
+                dateStyle: "medium",
+              })}
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock size={18} className="text-gray-400" /> 5 min read
+            </div>
+            <div className="flex items-center gap-2">
+              <Eye size={18} className="text-gray-400" />{" "}
+              {viewCount.toLocaleString()}
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Clock size={18} className="text-gray-400" /> 5 min read
-          </div>
-          <div className="flex items-center gap-2">
-            <Eye size={18} className="text-gray-400" />{" "}
-            {viewCount.toLocaleString()}
+          <div className="flex items-center gap-1">
+            {/* <CalendarCog size={18} className="text-gray-400" />{" "} */}
+            <span>Last updated :</span>
+            {lesson.updatedAt
+              ? new Date(lesson.updatedAt).toLocaleDateString(undefined, {
+                  dateStyle: "medium",
+                })
+              : new Date(lesson.createdAt).toLocaleDateString(undefined, {
+                  dateStyle: "medium",
+                })}
           </div>
         </div>
 
@@ -271,6 +291,9 @@ const LessonDetails = () => {
             >
               {lesson?.authorName}
             </h4>
+            <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">
+              <span>Total Lessons : {userLessons.length}</span>
+            </p>
             <button
               onClick={() => navigate(`/profile/${lesson.authorEmail}`)}
               className="text-sm text-blue-600 hover:text-blue-800 hover:underline font-medium"

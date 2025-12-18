@@ -27,6 +27,7 @@ const PaymentSuccess = () => {
     axiosSecure
       .patch(`/payment-success?session_id=${session_id}`)
       .then((res) => {
+        console.log(res);
         if (res.data.success) {
           setPaymentInfo({
             transactionId: res.data.transactionId,
@@ -111,8 +112,8 @@ const PaymentSuccess = () => {
 
           <div className="card-actions justify-center mt-6">
             <button
-              onClick={() => navigate("/")}
-              className="btn btn-primary w-full"
+              onClick={() => navigate("/dashboard")}
+              className="btn bg-blue-600 text-white w-full"
             >
               Continue to Dashboard
             </button>

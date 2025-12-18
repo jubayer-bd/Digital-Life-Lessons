@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
-import useIsPremium from "../hooks/usePremium";
+
 import { AuthContext } from "../Context/AuthContext";
+import useIsPremium from "../hooks/useIsPremium";
+import useRole from "../hooks/useRole";
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
   const { isPremium } = useIsPremium();
+  const { role, roleLoading } = useRole(); // Gets 'admin' or 'user'
   const pathname = location.pathname;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -17,9 +20,10 @@ export default function Navbar() {
   const handleSignOut = () => {
     logout();
     setMobileMenu(false);
+    setIsDropdownOpen(false);
   };
 
-  // Active link style
+  // --- STYLES ---
   const isActive = (route) =>
     pathname === route
       ? "text-blue-600 font-semibold"
@@ -45,19 +49,19 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm mb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 ">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          {/* --- LOGO --- */}
           <Link to="/" className="flex items-center gap-2">
             <figure className="bg-blue-600 p-2 rounded-lg">
-              <img src="/public/1.svg" alt="" />
+              <img src="/1.svg" alt="Logo" className="w-6 h-6" />
             </figure>
             <span className="text-xl md:text-2xl font-bold text-blue-600 tracking-tight">
               Digital Life Lessons
             </span>
           </Link>
 
-          {/* Desktop Menu */}
+          {/* --- DESKTOP MENU --- */}
           <div className="hidden lg:flex items-center space-x-8 text-sm font-medium">
             <Link to="/" className={isActive("/")}>
               Home
@@ -66,11 +70,12 @@ export default function Navbar() {
               Lessons
             </Link>
 
-            {user && (
+            {/* ROLE BASED LINKS: Only show for Standard Users (Not Admins) */}
+            {user && !roleLoading && role !== "admin" && (
               <>
                 <Link
-                  to="dashboard/add-lesson"
-                  className={isActive("dashboard/add-lesson")}
+                  to="/dashboard/add-lesson"
+                  className={isActive("/dashboard/add-lesson")}
                 >
                   Add Lesson
                 </Link>
@@ -78,17 +83,19 @@ export default function Navbar() {
                   to="/dashboard/my-lessons"
                   className={isActive("/dashboard/my-lessons")}
                 >
-                  My Lesson
+                  My Lessons
                 </Link>
-                {!isPremium && (
-                  <Link
-                    to="/pricing/upgrade"
-                    className={isActive("/pricing/upgrade")}
-                  >
-                    Upgrade
-                  </Link>
-                )}
               </>
+            )}
+
+            {/* Upgrade Link: Hide for Admins or Premium Users */}
+            {user && !roleLoading && !isPremium && role !== "admin" && (
+              <Link
+                to="/pricing/upgrade"
+                className={isActive("/pricing/upgrade")}
+              >
+                Upgrade
+              </Link>
             )}
 
             <Link to="/about" className={isActive("/about")}>
@@ -99,7 +106,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Auth */}
+          {/* --- DESKTOP AUTH / DROPDOWN --- */}
           <div className="hidden lg:flex items-center space-x-4">
             {user ? (
               <div className="relative" ref={dropdownRef}>
@@ -118,7 +125,6 @@ export default function Navbar() {
                       {user?.displayName?.[0]?.toUpperCase() || "U"}
                     </div>
                   )}
-
                   <span className="text-sm font-medium text-gray-700 max-w-[100px] truncate">
                     {user?.displayName || "User"}
                   </span>
@@ -127,33 +133,53 @@ export default function Navbar() {
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white shadow-xl rounded-xl py-2 border border-gray-100 z-50">
                     <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                      <p className="text-sm font-bold text-gray-900">
+                      <p className="text-sm font-bold text-gray-900 truncate">
                         {user?.displayName}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
                         {user?.email}
                       </p>
+                      {/* Show Role Badge */}
+                      <p className="text-[10px] uppercase font-bold text-blue-500 mt-1">
+                        {role || "User"}
+                      </p>
                     </div>
 
-                    <div className="py-2">
+                    <div className="py-1">
+                      {/* ADMIN DASHBOARD LINK */}
+                      {role === "admin" && (
+                        <Link
+                          to="/dashboard/admin/profile"
+                          onClick={() => setIsDropdownOpen(false)}
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-semibold text-purple-600"
+                        >
+                          Admin Dashboard
+                        </Link>
+                      )}
+
+                      {/* STANDARD DASHBOARD */}
+                      <Link
+                        to={
+                          role === "admin"
+                            ? "/dashboard/admin/profile"
+                            : "/dashboard"
+                        }
+                        onClick={() => setIsDropdownOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Dashboard
+                      </Link>
+
                       <Link
                         to="/dashboard/profile"
+                        onClick={() => setIsDropdownOpen(false)}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         Profile
                       </Link>
                     </div>
 
-                    <div className="py-2">
-                      <Link
-                        to="/dashboard"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        Dashboard
-                      </Link>
-                    </div>
-
-                    <div className="border-t border-gray-100 mt-1 pt-1">
+                    <div className="border-t border-gray-100 pt-1">
                       <button
                         onClick={handleSignOut}
                         className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
@@ -182,11 +208,11 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Toggle */}
+          {/* --- MOBILE TOGGLE --- */}
           <div className="lg:hidden flex items-center">
             <button
               onClick={() => setMobileMenu(!mobileMenu)}
-              className="p-2 rounded-md text-gray-600 hover:bg-gray-100"
+              className="p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none"
             >
               {mobileMenu ? <FaTimes size={24} /> : <FaBars size={24} />}
             </button>
@@ -194,7 +220,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* --- MOBILE MENU --- */}
       {mobileMenu && (
         <div className="lg:hidden bg-white border-t border-gray-100 shadow-lg absolute w-full left-0 z-40 max-h-[90vh] overflow-y-auto">
           <div className="px-4 pt-2 pb-6 space-y-1">
@@ -205,6 +231,45 @@ export default function Navbar() {
             >
               Home
             </Link>
+            <Link
+              to="/lessons"
+              onClick={() => setMobileMenu(false)}
+              className={mobileLinkStyle("/lessons")}
+            >
+              Lessons
+            </Link>
+
+            {/* MOBILE: Standard User Links */}
+            {user && !roleLoading && role !== "admin" && (
+              <>
+                <Link
+                  to="/dashboard/add-lesson"
+                  onClick={() => setMobileMenu(false)}
+                  className={mobileLinkStyle("/dashboard/add-lesson")}
+                >
+                  Add Lesson
+                </Link>
+                <Link
+                  to="/dashboard/my-lessons"
+                  onClick={() => setMobileMenu(false)}
+                  className={mobileLinkStyle("/dashboard/my-lessons")}
+                >
+                  My Lessons
+                </Link>
+              </>
+            )}
+
+            {/* MOBILE: Upgrade */}
+            {user && !roleLoading && !isPremium && role !== "admin" && (
+              <Link
+                to="/pricing/upgrade"
+                onClick={() => setMobileMenu(false)}
+                className={mobileLinkStyle("/pricing/upgrade")}
+              >
+                Upgrade
+              </Link>
+            )}
+
             <Link
               to="/about"
               onClick={() => setMobileMenu(false)}
@@ -220,66 +285,72 @@ export default function Navbar() {
               Contact
             </Link>
 
+            {/* MOBILE: Account Section */}
             {user && (
               <div className="mt-4 pt-4 border-t border-gray-100">
-                <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                  Account
-                </p>
+                <div className="px-3 flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Account
+                  </p>
+                  <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full uppercase font-bold">
+                    {role || "User"}
+                  </span>
+                </div>
+
+                {/* MOBILE: Admin Specific Link */}
+                {role === "admin" && (
+                  <Link
+                    to="/dashboard/admin/profile"
+                    onClick={() => setMobileMenu(false)}
+                    className={mobileLinkStyle("/dashboard/admin/profile")}
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
 
                 <Link
-                  to="/profile"
+                  to="/dashboard/profile"
                   onClick={() => setMobileMenu(false)}
-                  className={mobileLinkStyle("/profile")}
+                  className={mobileLinkStyle("/dashboard/profile")}
                 >
                   Profile
                 </Link>
+
+                {role !== "admin" && (
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileMenu(false)}
+                    className={mobileLinkStyle("/dashboard")}
+                  >
+                    Dashboard
+                  </Link>
+                )}
               </div>
             )}
 
-            {/* Auth */}
             <div className="mt-4 pt-4 border-t border-gray-100">
               {!user ? (
                 <div className="grid grid-cols-2 gap-3 px-3">
                   <Link
                     to="/login"
                     onClick={() => setMobileMenu(false)}
-                    className="flex justify-center items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="flex justify-center items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700"
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
                     onClick={() => setMobileMenu(false)}
-                    className="flex justify-center items-center px-4 py-2 bg-blue-600 rounded-lg text-sm font-medium text-white hover:bg-blue-700"
+                    className="flex justify-center items-center px-4 py-2 bg-blue-600 rounded-lg text-sm font-medium text-white"
                   >
                     Register
                   </Link>
                 </div>
               ) : (
-                <div className="px-3 pb-2">
-                  <div className="flex items-center gap-3 mb-4 p-2 bg-gray-50 rounded-lg">
-                    {user?.photoURL && (
-                      <img
-                        src={user.photoURL}
-                        width={30}
-                        height={30}
-                        className="rounded-full"
-                        alt="nav-user"
-                      />
-                    )}
-                    <div className="overflow-hidden">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {user?.displayName}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {user?.email}
-                      </p>
-                    </div>
-                  </div>
-
+                <div className="px-3">
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex justify-center items-center px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition"
+                    className="w-full flex justify-center items-center px-4 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50"
                   >
                     Sign Out
                   </button>
