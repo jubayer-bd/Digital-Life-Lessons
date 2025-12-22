@@ -68,14 +68,14 @@ const Lessons = () => {
       {/* --- 5. Search & Filter Bar --- */}
       <div className="bg-white border border-gray-200 p-6 rounded-3xl mb-12 shadow-sm flex flex-wrap gap-4 items-end">
         {/* Search Input */}
-        <div className="form-control flex-1 min-w-[250px]">
+        <div className="form-control flex flex-col min-w-5/12 ">
           <label className="label text-xs font-bold uppercase text-gray-500">
             Search
           </label>
           <input
             type="text"
             placeholder="Search by title..."
-            className="input input-bordered focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all"
+            className="input input-bordered w-full  focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 transition-all"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

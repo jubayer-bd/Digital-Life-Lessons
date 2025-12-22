@@ -6,8 +6,8 @@ const useIsPremium = () => {
   const { user } = useAuth();
   const axiosSecure = useAxios();
 
-  const { isLoading: roleLoading, data: isPremium = false } = useQuery({
-    queryKey: ["user-role", user?.email],
+  const { isLoading: PremiumLoading, data: isPremium = false } = useQuery({
+    queryKey: ["is-premium", user?.email],
     enabled: !!user?.email,
 
     queryFn: async () => {
@@ -18,7 +18,7 @@ const useIsPremium = () => {
     },
   });
 
-  return { isPremium, roleLoading };
+  return { isPremium, PremiumLoading };
 };
 
 export default useIsPremium;

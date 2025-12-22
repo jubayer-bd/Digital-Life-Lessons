@@ -10,8 +10,15 @@ export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
   const { isPremium } = useIsPremium();
-  const { role, roleLoading } = useRole(); // Gets 'admin' or 'user'
+  const { role, roleLoading } = useRole();
   const pathname = location.pathname;
+
+  // --- LOGIC ---
+  // We check if role is "admin" OR true (to handle the issue you mentioned)
+  const isAdmin = role === "admin" || role === true;
+  console.log(role);
+  // Helper to ensure we don't show links while role is fetching
+  const isUserReady = user && !roleLoading;
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -63,6 +70,7 @@ export default function Navbar() {
 
           {/* --- DESKTOP MENU --- */}
           <div className="hidden lg:flex items-center space-x-8 text-sm font-medium">
+            {/* PUBLIC LINKS */}
             <Link to="/" className={isActive("/")}>
               Home
             </Link>
@@ -70,8 +78,8 @@ export default function Navbar() {
               Lessons
             </Link>
 
-            {/* ROLE BASED LINKS: Only show for Standard Users (Not Admins) */}
-            {user && !roleLoading && role !== "admin" && (
+            {/* NORMAL USER LINKS: Hide if Admin */}
+            {isUserReady && !isAdmin && (
               <>
                 <Link
                   to="/dashboard/add-lesson"
@@ -88,8 +96,8 @@ export default function Navbar() {
               </>
             )}
 
-            {/* Upgrade Link: Hide for Admins or Premium Users */}
-            {user && !roleLoading && !isPremium && role !== "admin" && (
+            {/* UPGRADE LINK: Hide if Admin OR Premium */}
+            {isUserReady && !isAdmin && !isPremium && (
               <Link
                 to="/pricing/upgrade"
                 className={isActive("/pricing/upgrade")}
@@ -98,6 +106,7 @@ export default function Navbar() {
               </Link>
             )}
 
+            {/* PUBLIC LINKS */}
             <Link to="/about" className={isActive("/about")}>
               About
             </Link>
@@ -139,44 +148,53 @@ export default function Navbar() {
                       <p className="text-xs text-gray-500 truncate">
                         {user?.email}
                       </p>
-                      {/* Show Role Badge */}
                       <p className="text-[10px] uppercase font-bold text-blue-500 mt-1">
-                        {role || "User"}
+                        {isAdmin ? "Admin" : "User"}
                       </p>
                     </div>
 
                     <div className="py-1">
-                      {/* ADMIN DASHBOARD LINK */}
-                      {role === "admin" && (
-                        <Link
-                          to="/dashboard/admin/profile"
-                          onClick={() => setIsDropdownOpen(false)}
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-semibold text-purple-600"
-                        >
-                          Admin Dashboard
-                        </Link>
+                      {!roleLoading && (
+                        <>
+                          {isAdmin ? (
+                            // --- ADMIN LINKS ---
+                            <>
+                              <Link
+                                to="/dashboard/admin"
+                                onClick={() => setIsDropdownOpen(false)}
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-semibold text-purple-600"
+                              >
+                                Admin Dashboard
+                              </Link>
+                              <Link
+                                to="/dashboard/admin/profile"
+                                onClick={() => setIsDropdownOpen(false)}
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-semibold text-purple-600"
+                              >
+                                Admin Profile
+                              </Link>
+                            </>
+                          ) : (
+                            // --- NORMAL USER LINKS ---
+                            <>
+                              <Link
+                                to="/dashboard"
+                                onClick={() => setIsDropdownOpen(false)}
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              >
+                                Dashboard
+                              </Link>
+                              <Link
+                                to="/dashboard/profile"
+                                onClick={() => setIsDropdownOpen(false)}
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                              >
+                                Profile
+                              </Link>
+                            </>
+                          )}
+                        </>
                       )}
-
-                      {/* STANDARD DASHBOARD */}
-                      <Link
-                        to={
-                          role === "admin"
-                            ? "/dashboard/admin/profile"
-                            : "/dashboard"
-                        }
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        Dashboard
-                      </Link>
-
-                      <Link
-                        to="/dashboard/profile"
-                        onClick={() => setIsDropdownOpen(false)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        Profile
-                      </Link>
                     </div>
 
                     <div className="border-t border-gray-100 pt-1">
@@ -239,8 +257,8 @@ export default function Navbar() {
               Lessons
             </Link>
 
-            {/* MOBILE: Standard User Links */}
-            {user && !roleLoading && role !== "admin" && (
+            {/* MOBILE: Normal User Only */}
+            {isUserReady && !isAdmin && (
               <>
                 <Link
                   to="/dashboard/add-lesson"
@@ -259,8 +277,8 @@ export default function Navbar() {
               </>
             )}
 
-            {/* MOBILE: Upgrade */}
-            {user && !roleLoading && !isPremium && role !== "admin" && (
+            {/* MOBILE: Upgrade (Hide if Admin or Premium) */}
+            {isUserReady && !isAdmin && !isPremium && (
               <Link
                 to="/pricing/upgrade"
                 onClick={() => setMobileMenu(false)}
@@ -293,37 +311,52 @@ export default function Navbar() {
                     Account
                   </p>
                   <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full uppercase font-bold">
-                    {role || "User"}
+                    {isAdmin ? "Admin" : "User"}
                   </span>
                 </div>
 
-                {/* MOBILE: Admin Specific Link */}
-                {role === "admin" && (
-                  <Link
-                    to="/dashboard/admin/profile"
-                    onClick={() => setMobileMenu(false)}
-                    className={mobileLinkStyle("/dashboard/admin/profile")}
-                  >
-                    Admin Dashboard
-                  </Link>
-                )}
-
-                <Link
-                  to="/dashboard/profile"
-                  onClick={() => setMobileMenu(false)}
-                  className={mobileLinkStyle("/dashboard/profile")}
-                >
-                  Profile
-                </Link>
-
-                {role !== "admin" && (
-                  <Link
-                    to="/dashboard"
-                    onClick={() => setMobileMenu(false)}
-                    className={mobileLinkStyle("/dashboard")}
-                  >
-                    Dashboard
-                  </Link>
+                {!roleLoading && (
+                  <>
+                    {isAdmin ? (
+                      /* --- ADMIN LINKS --- */
+                      <>
+                        <Link
+                          to="/dashboard/admin"
+                          onClick={() => setMobileMenu(false)}
+                          className={mobileLinkStyle("/dashboard/admin")}
+                        >
+                          Admin Dashboard
+                        </Link>
+                        <Link
+                          to="/dashboard/admin/profile"
+                          onClick={() => setMobileMenu(false)}
+                          className={mobileLinkStyle(
+                            "/dashboard/admin/profile"
+                          )}
+                        >
+                          Admin Profile
+                        </Link>
+                      </>
+                    ) : (
+                      /* --- NORMAL USER LINKS --- */
+                      <>
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setMobileMenu(false)}
+                          className={mobileLinkStyle("/dashboard")}
+                        >
+                          Dashboard
+                        </Link>
+                        <Link
+                          to="/dashboard/profile"
+                          onClick={() => setMobileMenu(false)}
+                          className={mobileLinkStyle("/dashboard/profile")}
+                        >
+                          Profile
+                        </Link>
+                      </>
+                    )}
+                  </>
                 )}
               </div>
             )}

@@ -1,20 +1,20 @@
+// useRole.jsx
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "./useAuth";
 import useAxios from "./useAxios";
 
 const useRole = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth(); // Ensure you grab auth loading state too if available
   const axiosSecure = useAxios();
 
-  const {
-    isLoading: roleLoading,
-    data: role, // ❌ NO DEFAULT HERE
-  } = useQuery({
-    queryKey: ["user-role", user?.email],
-    enabled: !!user?.email,
+  const { isLoading: roleLoading, data: role } = useQuery({
+    // FIX: Change key to "user-role-string" to avoid collision with boolean hooks
+    queryKey: ["user-role-string", user?.email],
+    enabled: !!user?.email && !loading,
     queryFn: async () => {
       const res = await axiosSecure.get(`/users/${user.email}/role`);
-      return res.data.role;
+      // Ensure we return the role string (or null)
+      return res.data?.role;
     },
   });
 

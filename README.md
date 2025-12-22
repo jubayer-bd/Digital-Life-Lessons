@@ -101,5 +101,4 @@ The application is fully responsive, role-based, and implemented as a Single Pag
 
 ---
 
-## Folder Structure (Client)
 

@@ -162,7 +162,7 @@ const Login = () => {
             </motion.div>
           </div>
 
-          <motion.div
+          {/* <motion.div
             variants={itemVariants}
             className="flex items-center justify-end"
           >
@@ -174,7 +174,7 @@ const Login = () => {
                 Forgot your password?
               </a>
             </div>
-          </motion.div>
+          </motion.div> */}
 
           <motion.div variants={itemVariants}>
             <motion.button
