@@ -101,4 +101,19 @@ The application is fully responsive, role-based, and implemented as a Single Pag
 
 ---
 
+## 📂 Project Structure
 
+```txt
+digital-life-lessons/
+│
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── context/
+│   ├── hooks/
+│   ├── Firebase/
+│   ├── layouts/
+│   ├── pages/
+│   ├── route/
+│   └── main.jsx
+└── README.md

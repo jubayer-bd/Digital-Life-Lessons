@@ -12,7 +12,6 @@ const FeaturedLessons = () => {
       return res.data.lessons;
     },
   });
-  console.log(lessons);
   return (
     <div className="py-12">
       <h2 className="text-2xl font-semibold mb-6">

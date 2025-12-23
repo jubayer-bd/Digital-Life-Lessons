@@ -16,7 +16,6 @@ export default function Navbar() {
   // --- LOGIC ---
   // We check if role is "admin" OR true (to handle the issue you mentioned)
   const isAdmin = role === "admin" || role === true;
-  console.log(role);
   // Helper to ensure we don't show links while role is fetching
   const isUserReady = user && !roleLoading;
 

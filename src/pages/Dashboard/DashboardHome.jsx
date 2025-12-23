@@ -66,8 +66,6 @@ const DashboardHome = () => {
       return res.data;
     },
   });
-  console.log(recentLessons);
-
   // Analytics
   const { data: analytics = { labels: [], counts: [] } } = useQuery({
     queryKey: ["lesson-analytics"],

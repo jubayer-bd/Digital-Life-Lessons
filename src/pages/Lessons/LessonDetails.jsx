@@ -60,6 +60,7 @@ const LessonDetails = () => {
       return res.data;
     },
   });
+  console.log(lesson);
 
   // --- 2. State Management ---
   const [isLiked, setIsLiked] = useState(false);
@@ -70,13 +71,15 @@ const LessonDetails = () => {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [viewCount] = useState(Math.floor(Math.random() * 5000) + 500); // Static random
   const { data: userLessons = [], isLoading: lessonsLoading } = useQuery({
-    queryKey: ["authorLessons", user?.email],
+    queryKey: ["authorLessons", lesson?.authorEmail],
     queryFn: async () => {
-      const res = await axiosSecure.get(`/users/${user?.email}/lessons`);
+      const res = await axiosSecure.get(
+        `/users/${lesson?.authorEmail}/lessons`
+      );
       return res.data;
     },
   });
-  // console.log(userLessons);
+  console.log(userLessons);
   // Sync state when data loads
   useEffect(() => {
     if (lesson) {
@@ -89,8 +92,7 @@ const LessonDetails = () => {
     }
   }, [lesson, user]);
 
-  if (isLoading || roleLoading)
-    return <PageLoader text="Loading content..." />;
+  if (isLoading || roleLoading) return <PageLoader text="Loading content..." />;
 
   if (isError || !lesson) {
     return (
@@ -292,7 +294,7 @@ const LessonDetails = () => {
               {lesson?.authorName}
             </h4>
             <p className="text-xs text-gray-500 font-bold uppercase tracking-wider mb-0.5">
-              <span>Total Lessons : {userLessons.length}</span>
+              <span>Total Lessons : {userLessons?.length}</span>
             </p>
             <button
               onClick={() => navigate(`/profile/${lesson.authorEmail}`)}
