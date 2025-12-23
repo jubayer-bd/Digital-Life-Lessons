@@ -3,12 +3,14 @@ import { useParams, useNavigate } from "react-router-dom";
 import useAxios from "../../hooks/useAxios";
 import { useQuery } from "@tanstack/react-query";
 import PageLoader from "../../components/PageLoader";
-import { BookOpen, MapPin, Mail, ArrowLeft } from "lucide-react";
+import { BookOpen, MapPin, Mail, ArrowLeft, Star, Lock } from "lucide-react";
+import useIsPremium from "../../hooks/useIsPremium";
 
 const AuthorProfile = () => {
   const { email } = useParams();
   const axiosSecure = useAxios();
   const navigate = useNavigate();
+  const { isPremium: isUserPremium } = useIsPremium();
 
   // 1. Fetch Author Details
   const { data: author, isLoading: authorLoading } = useQuery({
@@ -20,7 +22,7 @@ const AuthorProfile = () => {
     },
     retry: 1,
   });
- 
+
   // 2. Fetch Author's Lessons
   const { data: lessons = [], isLoading: lessonsLoading } = useQuery({
     queryKey: ["authorLessons", email],
@@ -29,7 +31,7 @@ const AuthorProfile = () => {
       return res.data;
     },
   });
-
+  console.log(lessons);
   if (authorLoading || lessonsLoading)
     return <PageLoader text="Loading Profile..." />;
 
@@ -122,55 +124,86 @@ const AuthorProfile = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lessons.map((lesson) => (
-            <div
-              key={lesson._id}
-              onClick={() => navigate(`/lessons/${lesson._id}`)}
-              className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full"
-            >
-              {/* Card Image */}
-              <div className="h-48 overflow-hidden relative bg-gray-200">
-                {lesson.image ? (
-                  <img
-                    src={lesson.image}
-                    alt={lesson.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <BookOpen size={40} />
+          {lessons.map((lesson) => {
+            const isLocked = lesson.accessLevel === "premium" && !isUserPremium;
+
+            return (
+              <div
+                key={lesson._id}
+                onClick={() => {
+                  isLocked ? navigate('/pricing/upgrade') : navigate(`/lessons/${lesson._id}`);
+                }}
+                className={`group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full ${
+                  isLocked ? "cursor-not-allowed" : "cursor-pointer"
+                }`}
+              >
+                {/* Card Image */}
+                <div className="h-48 overflow-hidden relative bg-gray-200">
+                  {/* Image */}
+                  {lesson.image ? (
+                    <img
+                      src={lesson.image}
+                      alt={lesson.title}
+                      className={`w-full h-full object-cover group-hover:scale-105 transition duration-500 ${
+                        isLocked ? "blur-[2px] grayscale-[30%]" : ""
+                      }`}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <BookOpen size={40} />
+                    </div>
+                  )}
+
+                  {/* Premium Badge */}
+                  {lesson.accessLevel === "premium" && (
+                    <div className="absolute top-3 right-3 z-10">
+                      <span className="flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+                        <Star size={10} fill="currentColor" /> Premium
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Locked Overlay */}
+                  {isLocked && (
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center text-center p-4">
+                      <Lock className="text-white w-8 h-8 mb-2" />
+                      <p className="text-white text-sm font-semibold">
+                        Premium Content
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Category Badge */}
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-white/90 backdrop-blur text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md shadow-sm uppercase tracking-wide">
+                      {lesson.category}
+                    </span>
                   </div>
-                )}
+                </div>
 
-                {/* Category Badge */}
-                <div className="absolute top-3 left-3">
-                  <span className="bg-white/90 backdrop-blur text-blue-700 text-[10px] font-bold px-2 py-1 rounded-md shadow-sm uppercase tracking-wide">
-                    {lesson.category}
-                  </span>
+                {/* Card Body */}
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
+                    {lesson.title}
+                  </h3>
+
+                  <p className="text-sm text-gray-500 line-clamp-3 mb-4 flex-1">
+                    {lesson.description}
+                  </p>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
+                    <span className="text-xs text-gray-400 font-medium">
+                      {new Date(lesson.createdAt).toLocaleDateString()}
+                    </span>
+
+                    <span className="text-sm font-semibold text-blue-600">
+                      {isLocked ? "Premium" : "Read Lesson →"}
+                    </span>
+                  </div>
                 </div>
               </div>
-
-              {/* Card Body */}
-              <div className="p-5 flex flex-col flex-1">
-                <h3 className="font-bold text-gray-900 text-lg mb-2 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
-                  {lesson.title}
-                </h3>
-
-                <p className="text-sm text-gray-500 line-clamp-3 mb-4 flex-1">
-                  {lesson.description}
-                </p>
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-auto">
-                  <span className="text-xs text-gray-400 font-medium">
-                    {new Date(lesson.createdAt).toLocaleDateString()}
-                  </span>
-                  <span className="text-sm font-semibold text-blue-600 group-hover:translate-x-1 transition-transform">
-                    Read Lesson →
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

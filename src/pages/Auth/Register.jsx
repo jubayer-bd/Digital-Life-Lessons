@@ -45,7 +45,7 @@ const Register = () => {
 
       // 2. Use provided URL or a default avatar
       const photoURL =
-        data.photoURL || "https://i.ibb.co/0Q9Sjst/user-placeholder.png";
+        data.photoURL || "https://www.svgrepo.com/show/355688/user-a-solid.svg";
 
       // 3. Update Firebase profile
       await updateUserProfile({
