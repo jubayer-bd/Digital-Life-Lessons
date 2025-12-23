@@ -8,7 +8,7 @@ import useAuth from "../../hooks/useAuth";
 import axios from "axios";
 
 const Login = () => {
-  const { signInUser, googleSignIn, user } = useAuth(); 
+  const { signInUser, googleSignIn, user } = useAuth();
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();

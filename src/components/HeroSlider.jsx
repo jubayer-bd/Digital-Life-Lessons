@@ -85,7 +85,7 @@ export const HeroSlider = () => {
   };
 
   return (
-    <div className="relative w-full h-[70vh] rounded-[2.5rem] overflow-hidden bg-gray-900 text-white shadow-2xl">
+    <div className="relative w-full h-[60vh] rounded-[2.5rem] overflow-hidden bg-gray-900 text-white shadow-2xl">
       <AnimatePresence initial={false} custom={direction} mode="wait">
         <motion.div
           key={index}
@@ -134,15 +134,15 @@ export const HeroSlider = () => {
             </motion.p>
 
             <motion.button
-              initial={{ y: 30, opacity: 0 }}
+              initial={{ y: 25, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               whileHover={{
-                scale: 1.05,
+                scale: 1.0,
                 boxShadow: "0 0 20px rgba(37, 99, 235, 0.4)",
               }}
               whileTap={{ scale: 0.95 }}
               transition={{ delay: 0.4 }}
-              className="mt-10 px-10 py-4 bg-blue-600 hover:bg-blue-500 rounded-full font-bold text-lg shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2"
+              className="mt-8 px-10 py-4 bg-blue-600 hover:bg-blue-500 rounded-full font-bold text-lg shadow-lg shadow-blue-900/20 transition-all flex items-center gap-2"
             >
               <Link to={'lessons'}>Start Your Journal</Link>
             </motion.button>
@@ -173,7 +173,7 @@ export const HeroSlider = () => {
       </div>
 
       {/* Modern Dots Pagination */}
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-20 bg-black/20 backdrop-blur-md px-5 py-3 rounded-full border border-white/5">
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-4 z-20 bg-black/20 backdrop-blur-md px-5 py-3 rounded-full border border-white/5">
         {sliderData.map((_, i) => (
           <button
             key={i}

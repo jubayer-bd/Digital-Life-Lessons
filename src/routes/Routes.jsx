@@ -54,7 +54,14 @@ export const router = createBrowserRouter([
           </PrivateRoute>
         ),
       },
-      { path: "profile/:email", element: <AuthorProfile /> },
+      {
+        path: "profile/:email",
+        element: (
+          <PrivateRoute>
+            <AuthorProfile />
+          </PrivateRoute>
+        ),
+      },
       { path: "about", element: <About /> },
       { path: "contact", element: <Contact /> },
       // auth

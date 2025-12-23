@@ -6,6 +6,7 @@ import LessonCard from "../../Lessons/LessonCard";
 import useAuth from "../../../hooks/useAuth";
 import useAxios from "../../../hooks/useAxios";
 import useIsPremium from "../../../hooks/useIsPremium";
+import PageLoader from "../../../components/PageLoader";
 
 const Profile = () => {
   const { user, updateUserProfile } = useAuth();
@@ -20,17 +21,17 @@ const Profile = () => {
   });
 
   // Fetch stats and lessons in separate queries for better UX
-  const { data: stats = { created: 0, saved: 0 } } = useQuery({
-    queryKey: ["profile-stats", user?.email],
-    enabled: !!user?.email,
-    queryFn: async () => (await axiosSecure.get("/users/profile-stats")).data,
-  });
+  const { data: stats = { created: 0, saved: 0 }, isLoading: userLoading } =
+    useQuery({
+      queryKey: ["profile-stats", user?.email],
+      enabled: !!user?.email,
+      queryFn: async () => (await axiosSecure.get("/users/profile-stats")).data,
+    });
 
   const { data: lessons = [], isLoading: lessonsLoading } = useQuery({
-    queryKey: ["public-lessons", user?.email],
+    queryKey: ["public-lessons"],
     enabled: !!user?.email,
-    queryFn: async () =>
-      (await axiosSecure.get(`/lessons/user/${user.email}`)).data,
+    queryFn: async () => (await axiosSecure.get(`/user/profile`)).data,
   });
 
   const updateMutation = useMutation({
@@ -51,7 +52,9 @@ const Profile = () => {
       queryClient.invalidateQueries(["public-lessons"]);
     },
   });
-
+  if (userLoading) {
+    return <PageLoader text="loading profile" />;
+  }
   if (roleLoading)
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -103,7 +106,7 @@ const Profile = () => {
                 <div className="flex gap-2 justify-center md:justify-start">
                   <button
                     onClick={() => updateMutation.mutate()}
-                    className="btn btn-primary btn-sm rounded-full px-6"
+                    className="btn bg-blue-600 text-white btn-sm rounded-full px-6"
                   >
                     Save
                   </button>
@@ -111,7 +114,7 @@ const Profile = () => {
                     onClick={() =>
                       setEditState({ ...editState, isEditing: false })
                     }
-                    className="btn btn-ghost btn-sm"
+                    className="btn  rounded-full text-black border-blue-600 btn-sm"
                   >
                     Cancel
                   </button>

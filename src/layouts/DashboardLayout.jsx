@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   BookMarked,
   X,
+  User,
 } from "lucide-react";
 
 const USER_LINKS = [
@@ -24,6 +25,7 @@ const USER_LINKS = [
   { to: "/dashboard/add-lesson", icon: PlusCircle, label: "Create Lesson" },
   { to: "/dashboard/my-lessons", icon: BookOpen, label: "My Lessons" },
   { to: "/dashboard/saved-lessons", icon: Heart, label: "Saved Lessons" },
+  { to: "/dashboard/profile", icon: User, label: "Profile" },
 ];
 
 const ADMIN_LINKS = [
@@ -172,7 +174,7 @@ const DashBoardLayout = () => {
           open ? "lg:ml-[280px]" : "lg:ml-[88px]"
         }`}
       >
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between">
+        <header className="h-20 bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between">
           <button
             onClick={() => setOpen(!open)}
             className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
@@ -188,8 +190,8 @@ const DashBoardLayout = () => {
               <p className="text-xs text-gray-400 capitalize">{role}</p>
             </div>
             <img
-              src={user?.photoURL || "https://ui-avatars.com/api/?name=User"}
-              className="w-10 h-10 rounded-full border object-cover"
+              src={user?.photoURL || <User />}
+              className="w-11 h-11 rounded-full border-2 border-blue-600 object-cover"
               alt="profile"
             />
           </div>

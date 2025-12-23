@@ -242,7 +242,7 @@ const ManageUsers = () => {
                         ? "bg-purple-50 text-purple-700 border-purple-200"
                         : "bg-blue-50 text-blue-700 border-blue-200"
                     }`}>
-                      {user.role === "admin" ? "Administrator" : "Student"}
+                      {user.role === "admin" ? "Admin" : "User"}
                     </span>
                   </td>
 
