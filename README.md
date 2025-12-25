@@ -14,6 +14,23 @@ The application is fully responsive, role-based, and implemented as a Single Pag
 - Server: https://life-lessons-server-side.vercel.app/
 
 ---
+### Admin Email & Password
+
+Email: `digital@admin.com` </br>
+Password : `Admin1234`
+
+---
+
+## Overview 
+
+## Uer Dashboard
+
+<img src="src/assets/UserDashBoard.png">
+
+## Uer Dashboard
+
+<img src="src/assets/AdminDashBoard.png">
+
 
 ## Features
 
@@ -100,6 +117,8 @@ The application is fully responsive, role-based, and implemented as a Single Pag
 - lucide-react
 
 ---
+### Payment Method
+<img src="src/assets/PaymentMethod.jpeg">
 
 ## 📂 Project Structure
 
