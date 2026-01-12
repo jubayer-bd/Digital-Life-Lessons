@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Eye, EyeOff, Image, User, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Image, User, Mail, Lock, Loader2 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 
 const Register = () => {
@@ -75,10 +75,17 @@ const Register = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleSocialSignIn = async (provider) => {
     setLoading(true);
     try {
-      const result = await googleSignIn();
+      let result;
+      if (provider === "google") {
+        result = await googleSignIn();
+      } else {
+        toast.error("Facebook login not configured yet");
+        setLoading(false);
+        return;
+      }
 
       const userInfo = {
         email: result.user.email,
@@ -95,7 +102,7 @@ const Register = () => {
       navigate(from, { replace: true });
     } catch (error) {
       console.error(error);
-      toast.error("SignUp Failed");
+      toast.error(`${provider} SignUp Failed`);
     } finally {
       setLoading(false);
     }
@@ -140,7 +147,9 @@ const Register = () => {
                 type="text"
                 {...register("name", { required: "Name is required" })}
                 placeholder="Full Name"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
+                className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white ${
+                  errors.name ? "border-red-500" : "border-gray-300"
+                }`}
               />
               <AnimatePresence>
                 {errors.name && (
@@ -156,7 +165,7 @@ const Register = () => {
               </AnimatePresence>
             </motion.div>
 
-            {/* Photo URL (Updated to Text Input and Optional) */}
+            {/* Photo URL */}
             <motion.div variants={itemVariants} className="relative">
               <div className="absolute inset-y-0 left-0 -mt-4 pl-3 flex items-center pointer-events-none text-gray-400">
                 <Image size={18} />
@@ -165,7 +174,7 @@ const Register = () => {
                 type="url"
                 {...register("photoURL")}
                 placeholder="Profile Photo URL (Optional)"
-                className="block w-full pl-10 pr-3 py-3   border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
               />
               <p className="text-[10px] text-gray-400 mt-1 ml-1">
                 Leave empty for default avatar
@@ -181,7 +190,9 @@ const Register = () => {
                 type="email"
                 {...register("email", { required: "Email is required" })}
                 placeholder="Email Address"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
+                className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white ${
+                  errors.email ? "border-red-500" : "border-gray-300"
+                }`}
               />
               <AnimatePresence>
                 {errors.email && (
@@ -212,7 +223,9 @@ const Register = () => {
                   },
                 })}
                 placeholder="Password"
-                className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
+                className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white ${
+                  errors.password ? "border-red-500" : "border-gray-300"
+                }`}
               />
               <button
                 type="button"
@@ -238,13 +251,13 @@ const Register = () => {
 
           <motion.div variants={itemVariants}>
             <motion.button
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <span className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></span>
+                <Loader2 className="animate-spin h-5 w-5 text-white" />
               ) : (
                 "Create Account"
               )}
@@ -252,20 +265,34 @@ const Register = () => {
           </motion.div>
         </form>
 
-        {/* Google Sign In */}
+        {/* Social Sign In */}
         <motion.div variants={itemVariants} className="mt-4">
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full flex justify-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-          >
-            <img
-              className="h-5 w-5 mr-2"
-              src="https://www.svgrepo.com/show/475656/google-color.svg"
-              alt="Google"
-            />
-            Sign up with Google
-          </button>
+           <div className="relative mb-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">
+                Or sign up with
+              </span>
+            </div>
+          </div>
+          
+           <div className="">
+             <button
+              onClick={() => handleSocialSignIn("google")}
+              disabled={loading}
+              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            >
+              <img
+                className="h-5 w-5 mr-2"
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+                alt="Google"
+              />
+              Google
+            </button>
+           
+           </div>
         </motion.div>
 
         <motion.div variants={itemVariants} className="text-center text-sm">

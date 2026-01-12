@@ -24,9 +24,9 @@ const Footer = () => {
         <div>
           <h3 className="text-blue-600 font-semibold mb-4">Contact</h3>
           <ul className="space-y-2 text-sm">
-            <li className="flex items-center gap-2 hover:text-blue-600">
-              <Mail size={16} /> support@digitallifelessons.com
-            </li>
+            <a href="mailto:jubayer.dev.bd@gmail.com" className="flex items-center gap-2 hover:text-blue-600">
+              <Mail size={16} /> jubayer.dev.bd@gmail.com
+            </a>
             <li className="flex items-center gap-2 hover:text-blue-600">
               <MapPin size={16} />
               Dhaka, Bangladesh
@@ -54,7 +54,7 @@ const Footer = () => {
           <h3 className="text-blue-600 font-semibold mb-4">Follow Us</h3>
           <div className="flex gap-4">
             <a
-              href="https://facebook.com"
+              href="https://www.facebook.com/md.jubayer.hossain.227246"
               target="_blank"
               rel="noreferrer"
               className="hover:text-blue-600 transition"
@@ -62,7 +62,7 @@ const Footer = () => {
               <Facebook />
             </a>
             <a
-              href="https://linkedin.com"
+              href="https://www.linkedin.com/in/dev-jubayer/"
               target="_blank"
               rel="noreferrer"
               className="hover:text-blue-600 transition"
@@ -70,7 +70,7 @@ const Footer = () => {
               <Linkedin />
             </a>
             <a
-              href="https://github.com"
+              href="https://github.com/jubayer-bd"
               target="_blank"
               rel="noreferrer"
               className="hover:text-blue-600 transition"

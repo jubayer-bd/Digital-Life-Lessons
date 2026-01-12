@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, Loader2, ShieldCheck, User } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import axios from "axios";
 
@@ -19,10 +19,11 @@ const Login = () => {
   const {
     register,
     handleSubmit,
+    setValue, // Used to auto-fill fields
     formState: { errors },
   } = useForm();
 
-  // Animation Variants (unchanged)
+  // Animation Variants
   const containerVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
@@ -41,7 +42,6 @@ const Login = () => {
     setLoading(true);
     try {
       await signInUser(data.email, data.password);
-
       toast.success("Welcome Back!");
       navigate(from, { replace: true });
     } catch (error) {
@@ -52,10 +52,30 @@ const Login = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  // Demo Login Handler
+  const handleDemoLogin = (role) => {
+    if (role === "admin") {
+      setValue("email", "digital@admin.com");
+      setValue("password", "Admin1234");
+    } else {
+      setValue("email", "digital@user.com");
+      setValue("password", "User1234");
+    }
+    toast.success(`${role.charAt(0).toUpperCase() + role.slice(1)} credentials filled!`);
+  };
+
+  const handleSocialSignIn = async (provider) => {
     setLoading(true);
     try {
-      const result = await googleSignIn();
+      let result;
+      if (provider === "google") {
+        result = await googleSignIn();
+      } else {
+        // Implement Facebook Sign In logic here if needed
+        toast.error("Facebook login not configured yet");
+        setLoading(false);
+        return;
+      }
 
       const userInfo = {
         email: result.user.email,
@@ -72,7 +92,7 @@ const Login = () => {
       navigate(from, { replace: true });
     } catch (error) {
       console.error(error);
-      toast.error("Google Login Failed");
+      toast.error(`${provider} Login Failed`);
     } finally {
       setLoading(false);
     }
@@ -90,7 +110,7 @@ const Login = () => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl border border-gray-100"
+        className="max-w-md w-full space-y-6 bg-white p-8 sm:p-10 rounded-2xl shadow-xl border border-gray-100"
       >
         {/* Header */}
         <motion.div variants={itemVariants} className="text-center">
@@ -102,7 +122,25 @@ const Login = () => {
           </p>
         </motion.div>
 
-        <form onSubmit={handleSubmit(handleLogin)} className="mt-8 space-y-6">
+        {/* Demo Login Buttons */}
+        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 bg-gray-50 p-2 rounded-lg border border-gray-200">
+          <button
+            onClick={() => handleDemoLogin("user")}
+            type="button"
+            className="flex items-center justify-center gap-2 py-2 px-4 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors border border-blue-100"
+          >
+            <User size={14} /> Demo User
+          </button>
+          <button
+            onClick={() => handleDemoLogin("admin")}
+            type="button"
+            className="flex items-center justify-center gap-2 py-2 px-4 text-xs font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors border border-purple-100"
+          >
+            <ShieldCheck size={14} /> Demo Admin
+          </button>
+        </motion.div>
+
+        <form onSubmit={handleSubmit(handleLogin)} className="space-y-5">
           <div className="space-y-4">
             {/* Email */}
             <motion.div variants={itemVariants} className="relative">
@@ -111,9 +149,11 @@ const Login = () => {
               </div>
               <input
                 type="email"
-                {...register("email", { required: true })}
+                {...register("email", { required: "Email is required" })}
                 placeholder="Email Address"
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
+                className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white ${
+                  errors.email ? "border-red-500" : "border-gray-300"
+                }`}
               />
               <AnimatePresence>
                 {errors.email && (
@@ -123,7 +163,7 @@ const Login = () => {
                     exit={{ opacity: 0, height: 0 }}
                     className="text-red-500 text-xs mt-1 ml-1"
                   >
-                    Email is required
+                    {errors.email.message}
                   </motion.p>
                 )}
               </AnimatePresence>
@@ -136,9 +176,11 @@ const Login = () => {
               </div>
               <input
                 type={showPass ? "text" : "password"}
-                {...register("password", { required: true, minLength: 6 })}
+                {...register("password", { required: "Password is required" })}
                 placeholder="Password"
-                className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white"
+                className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50 focus:bg-white ${
+                  errors.password ? "border-red-500" : "border-gray-300"
+                }`}
               />
               <button
                 type="button"
@@ -155,36 +197,22 @@ const Login = () => {
                     exit={{ opacity: 0, height: 0 }}
                     className="text-red-500 text-xs mt-1 ml-1"
                   >
-                    Password is required
+                    {errors.password.message}
                   </motion.p>
                 )}
               </AnimatePresence>
             </motion.div>
           </div>
 
-          {/* <motion.div
-            variants={itemVariants}
-            className="flex items-center justify-end"
-          >
-            <div className="text-sm">
-              <a
-                href="#"
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-              >
-                Forgot your password?
-              </a>
-            </div>
-          </motion.div> */}
-
           <motion.div variants={itemVariants}>
             <motion.button
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
               disabled={loading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
-                <span className="loading loading-spinner loading-sm"></span>
+                 <Loader2 className="animate-spin h-5 w-5 text-white" />
               ) : (
                 "Sign In"
               )}
@@ -204,14 +232,14 @@ const Login = () => {
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-2">
             <motion.button
               whileHover={{ scale: 1.02, backgroundColor: "#f9fafb" }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleGoogleSignIn}
+              onClick={() => handleSocialSignIn("google")}
               disabled={loading}
               type="button"
-              className="w-full inline-flex justify-center items-center py-3 px-4 rounded-lg shadow-sm bg-white border border-gray-300 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-all"
+              className="w-full inline-flex justify-center items-center py-2.5 px-4 rounded-lg shadow-sm bg-white border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all"
             >
               <img
                 className="h-5 w-5 mr-2"
@@ -220,6 +248,8 @@ const Login = () => {
               />
               Google
             </motion.button>
+
+            
           </div>
         </motion.div>
 

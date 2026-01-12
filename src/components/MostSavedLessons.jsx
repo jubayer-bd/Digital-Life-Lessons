@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bookmark, ArrowUpRight, User } from "lucide-react";
 import { motion } from "framer-motion";
 import useAxios from "../hooks/useAxios";
+import { Link } from "react-router";
 
 export default function MostSavedLessons() {
   const axiosSecure = useAxios();
@@ -12,11 +13,12 @@ export default function MostSavedLessons() {
       return res.data;
     },
   });
+  console.log(data);
 
   if (isLoading) return <LessonsSkeleton />;
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 ">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between mb-12">
           <div>
@@ -50,9 +52,12 @@ export default function MostSavedLessons() {
                 <span className="p-2 bg-blue-50 text-blue-600 rounded-xl">
                   <Bookmark size={20} />
                 </span>
-                <button className="text-gray-300 hover:text-blue-600 transition-colors">
+                <Link
+                  to={`/lessons/${lesson._id}`}
+                  className="text-gray-300 hover:text-blue-600 transition-colors"
+                >
                   <ArrowUpRight size={24} />
-                </button>
+                </Link>
               </div>
 
               <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-1 group-hover:text-blue-600 transition-colors">
