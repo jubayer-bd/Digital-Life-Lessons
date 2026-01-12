@@ -53,9 +53,9 @@ export const router = createBrowserRouter([
       {
         path: "profile/:email",
         element: (
-          <PrivateRoute>
+          
             <AuthorProfile />
-          </PrivateRoute>
+         
         ),
       },
       { path: "about", element: <About /> },
